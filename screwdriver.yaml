@@ -9,7 +9,7 @@ shared:
   # "repo_name:tag_label".
   #
   # (Source: https://hub.docker.com/r/library/buildpack-deps/)
-  image: sickcodes/docker-osx
+  image:
 
 # Job definition block
 # "main" is a default job that all pipelines have
