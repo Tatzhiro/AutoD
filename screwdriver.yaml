@@ -37,4 +37,4 @@ jobs:
       # Metadata is a structured key/value storage of relevant information about a build. 
       # Metadata will be shared with subsequent builds in the same workflow.
       # You can set any key using the command "meta set <key> <value>".
-      - set-metadata: meta set example.coverage 99.95
+      # - set-metadata: meta set example.coverage 99.95
