@@ -1,11 +1,31 @@
 shared:
+  annotations:
+    screwdriver.cd/timeout: 2880
   requires: [ ~commit, ~pr ]
   image: buildpack-deps
+  environment:
+    MYSQL_HOST: 20.222.144.239
+    MYSQL_USER: test
+    MYSQL_PASSWD: test
+    MYSQL_DB: test
+    CPU: 2
+    MEM: 4368709120
+    LOW: 2
+    MEDIUM: 4
+    HIGH: 6
+    STEP_WIDTH: 891289600
+    TEST_DURATION: 120
+    TEST_WORKLOAD_001: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=4 --table_size=10000 --threads=${LOW} --time=${TEST_DURATION} oltp_read_write run
 jobs:
-  # Jobs are defined by name.
-  # All pipelines have "main" implicitly defined. The definitions in your
-  # screwdriver.yaml file will override the implied defaults.
-  test:
+   run_test:
+    #template: db-auto-tune/db-auto-tune-template@1.0.0
+    order: [install, sysbench-download, sysbench-deploy, sysbench-verify, client-install, conn-test, db-create, data-load, exec-work]
     steps:
-      - export: export GREETING="Hello, world 2!"
-      - hello: echo $GREETING
+     - sysbench-download: wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
+     - sysbench-deploy: apt-get install -y sysbench
+     - sysbench-verify: sysbench --help
+     - client-install: apt-get install -y default-mysql-client
+     - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';" 
+     - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
+     - data-load: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=4 --table_size=10000 --threads=${LOW} oltp_common prepare
+     - exec-work: ${TEST_WORKLOAD_001}
