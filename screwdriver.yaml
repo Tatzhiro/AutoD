@@ -14,8 +14,8 @@ shared:
     MEDIUM: 4
     HIGH: 6
     STEP_WIDTH: 891289600
-    TEST_DURATION: 120
-    TEST_WORKLOAD_001: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=4 --table_size=10000 --threads=${LOW} --time=${TEST_DURATION} oltp_read_write run
+    TEST_DURATION: 300
+    TEST_WORKLOAD_001: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=4 --table_size=10000 --threads=${HIGH} --time=${TEST_DURATION} oltp_read_write run
 jobs:
    run_test:
     #template: db-auto-tune/db-auto-tune-template@1.0.0
