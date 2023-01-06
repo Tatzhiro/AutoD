@@ -25,6 +25,7 @@ shared:
 jobs:
    run_test:
     steps:
+     - python: python3 exporter.py
      - install-pip: |
          apt-get -y update
          apt-get install -y python3-pip
