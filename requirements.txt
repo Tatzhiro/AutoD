@@ -1,4 +1,3 @@
-collections
 csv
 datetime
 logging
@@ -7,3 +6,4 @@ time
 requests
 urllib3
 argparse
+collections
