@@ -25,7 +25,7 @@ shared:
 jobs:
    run_test:
     steps:
-     - install-pip: apt-get install -y pip
+     - install-pip: apt-get install -y python3-pip
      - install-libraries: pip install -r requirements.txt
      - sysbench-download: wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
      - sysbench-deploy: apt-get install -y sysbench
