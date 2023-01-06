@@ -16,6 +16,7 @@ shared:
     MEDIUM: 4
     HIGH: 6
     TEST_DURATION: 300
+    SLEEP_DURATION: 120
     TEST_WORKLOAD_001_LOW: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${LOW} --time=${TEST_DURATION} oltp_read_write run
     TEST_WORKLOAD_001_MEDIUM: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${MEDIUM} --time=${TEST_DURATION} oltp_read_write run
     TEST_WORKLOAD_001_HIGH: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${HIGH} --time=${TEST_DURATION} oltp_read_write run
@@ -32,3 +33,34 @@ jobs:
          pip install --upgrade pip
          pip install -r requirements.txt
      - python: python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics.csv
+     - sysbench-download: wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
+     - sysbench-deploy: apt-get install -y sysbench
+     - sysbench-verify: sysbench --help
+     - client-install: apt-get install -y default-mysql-client
+     - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';" 
+     - db-param-set: |
+         mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
+         mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
+     - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
+     - data-load: |
+         sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${LOW} oltp_common prepare
+         sleep 120
+     - exec-work: |
+         ${TEST_WORKLOAD_001_LOW}
+         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics1low.csv
+         sleep ${SLEEP_DURATION}
+         ${TEST_WORKLOAD_001_MEDIUM}
+         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics1mid.csv
+         sleep ${SLEEP_DURATION}
+         ${TEST_WORKLOAD_001_HIGH}
+         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics1high.csv
+         sleep ${SLEEP_DURATION}
+         ${TEST_WORKLOAD_002_LOW}
+         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics2low.csv
+         sleep ${SLEEP_DURATION}
+         ${TEST_WORKLOAD_002_MEDIUM}
+         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics2mid.csv
+         sleep ${SLEEP_DURATION}
+         ${TEST_WORKLOAD_002_HIGH}
+         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics2high.csv
+         sleep ${SLEEP_DURATION}
