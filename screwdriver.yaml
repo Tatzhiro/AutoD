@@ -26,9 +26,10 @@ jobs:
    run_test:
     steps:
      - sysbench-download: wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
-     - sysbench-deploy: sudo apt-get install -y sysbench
+     - sysbench-deploy: apt-get install -y sysbench
      - sysbench-verify: sysbench --help
-     - install-python: | pip install -r requirements.txt
+     - install-python: | 
+         pip install -r requirements.txt
      - client-install: apt-get install -y default-mysql-client
      - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';" 
      - db-param-set: |
