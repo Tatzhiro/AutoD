@@ -29,6 +29,7 @@ jobs:
      - sysbench-deploy: apt-get install -y sysbench
      - sysbench-verify: sysbench --help
      - install-python: | 
+         apt-get install -y pip
          pip install -r requirements.txt
      - client-install: apt-get install -y default-mysql-client
      - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';" 
