@@ -2,7 +2,7 @@ shared:
   annotations:
     screwdriver.cd/timeout: 2880
   requires: [ ~commit, ~pr ]
-  image: buildpack-deps
+  image: ubuntu-latest
   environment:
     MYSQL_HOST: 20.222.144.239
     MYSQL_USER: test
@@ -26,13 +26,13 @@ jobs:
    run_test:
     steps:
      - sysbench-download: wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
-     - sysbench-deploy: apt-get install -y sysbench
+     - sysbench-deploy: sudo apt-get install -y sysbench
      - sysbench-verify: sysbench --help
      - install-python: |
          echo `python3 --version`
-         apt-get -y install python3-pip
-         pip3 install argparse
-         pip3 install -r requirements.txt
+         sudo apt-get -y install python3-pip
+         sudo pip3 install argparse
+         sudo pip3 install -r requirements.txt
      - client-install: apt-get install -y default-mysql-client
      - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';" 
      - db-param-set: |
