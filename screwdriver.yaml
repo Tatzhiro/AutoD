@@ -31,7 +31,7 @@ jobs:
      - install-libraries: |
          pip install --upgrade pip
          pip install -r requirements.txt
-     - python: python3 exporter.py
+     - python: python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics.csv
      - sysbench-download: wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
      - sysbench-deploy: apt-get install -y sysbench
      - sysbench-verify: sysbench --help
@@ -47,26 +47,26 @@ jobs:
      - exec-work: |
          ${TEST_WORKLOAD_001_LOW}
          python3 exporter.py
-         cat metrics.csv
+         cat metrics.csv > ${SD_ARTIFACTS_DIR}/TEST_WORKLOAD_001_LOW.csv
          sleep 120
          ${TEST_WORKLOAD_001_MEDIUM}
          python3 exporter.py
-         cat metrics.csv
+         cat metrics.csv > ${SD_ARTIFACTS_DIR}/TEST_WORKLOAD_001_MEDIUM.csv
          sleep 120
          ${TEST_WORKLOAD_001_HIGH}
          python3 exporter.py
-         cat metrics.csv
+         cat metrics.csv > ${SD_ARTIFACTS_DIR}/TEST_WORKLOAD_001_HIGH.csv
          sleep 120
          ${TEST_WORKLOAD_002_LOW}
          python3 exporter.py
-         cat metrics.csv
+         cat metrics.csv > ${SD_ARTIFACTS_DIR}/TEST_WORKLOAD_002_LOW.csv
          sleep 120
          ${TEST_WORKLOAD_002_MEDIUM}
          python3 exporter.py
-         cat metrics.csv
+         cat metrics.csv > ${SD_ARTIFACTS_DIR}/TEST_WORKLOAD_002_MEDIUM.csv
          sleep 120
          ${TEST_WORKLOAD_002_HIGH}
          python3 exporter.py
-         cat metrics.csv
+         cat metrics.csv > ${SD_ARTIFACTS_DIR}/TEST_WORKLOAD_002_HIGH.csv
          sleep 120
        
