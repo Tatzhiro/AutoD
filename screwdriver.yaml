@@ -4,28 +4,63 @@ shared:
   requires: [ ~commit, ~pr ]
   image: buildpack-deps
   environment:
-    MYSQL_HOST: 20.222.144.239
+    MYSQL_HOST: 20.222.205.247
     MYSQL_USER: test
     MYSQL_PASSWD: test
     MYSQL_DB: test
-    CPU: 2
-    MEM: 4368709120
+    TABLE_NUM: 4
+    TABLE_SIZE: 1000000
+    INNODB_BUFFER_POOL_SIZE: 134217728 
+    INNODB_IO_CAPACITY: 200
     LOW: 2
     MEDIUM: 4
     HIGH: 6
-    STEP_WIDTH: 891289600
     TEST_DURATION: 300
-    TEST_WORKLOAD_001: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=4 --table_size=10000 --threads=${HIGH} --time=${TEST_DURATION} oltp_read_write run
+    TEST_WORKLOAD_001_LOW: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${LOW} --time=${TEST_DURATION} oltp_read_write run
+    TEST_WORKLOAD_001_MEDIUM: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${MEDIUM} --time=${TEST_DURATION} oltp_read_write run
+    TEST_WORKLOAD_001_HIGH: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${HIGH} --time=${TEST_DURATION} oltp_read_write run
+    TEST_WORKLOAD_002_LOW: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${LOW} --time=${TEST_DURATION} oltp_write_only run
+    TEST_WORKLOAD_002_MEDIUM: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${MEDIUM} --time=${TEST_DURATION} oltp_write_only run
+    TEST_WORKLOAD_002_HIGH: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${HIGH} --time=${TEST_DURATION} oltp_write_only run
 jobs:
    run_test:
-    #template: db-auto-tune/db-auto-tune-template@1.0.0
-    order: [install, sysbench-download, sysbench-deploy, sysbench-verify, client-install, conn-test, db-create, data-load, exec-work]
     steps:
      - sysbench-download: wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
      - sysbench-deploy: apt-get install -y sysbench
      - sysbench-verify: sysbench --help
      - client-install: apt-get install -y default-mysql-client
      - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';" 
+     - db-param-set: |
+         mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
+         mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
      - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
-     - data-load: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=4 --table_size=10000 --threads=${LOW} oltp_common prepare
-     - exec-work: ${TEST_WORKLOAD_001}
+     - data-load: |
+         sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${LOW} oltp_common prepare
+         sleep 120
+     - install-libraries: pip3 install -r requirements.txt
+     - exec-work: |
+         ${TEST_WORKLOAD_001_LOW}
+         python3 exporter.py
+         cat metrics.csv
+         sleep 120
+         ${TEST_WORKLOAD_001_MEDIUM}
+         python3 exporter.py
+         cat metrics.csv
+         sleep 120
+         ${TEST_WORKLOAD_001_HIGH}
+         python3 exporter.py
+         cat metrics.csv
+         sleep 120
+         ${TEST_WORKLOAD_002_LOW}
+         python3 exporter.py
+         cat metrics.csv
+         sleep 120
+         ${TEST_WORKLOAD_002_MEDIUM}
+         python3 exporter.py
+         cat metrics.csv
+         sleep 120
+         ${TEST_WORKLOAD_002_HIGH}
+         python3 exporter.py
+         cat metrics.csv
+         sleep 120
+       
