@@ -4,7 +4,7 @@ shared:
   requires: [ ~commit, ~pr ]
   image: buildpack-deps
   environment:
-    MYSQL_HOST: 20.222.205.247
+    MYSQL_HOST: 20.222.144.239
     MYSQL_USER: test
     MYSQL_PASSWD: test
     MYSQL_DB: test
