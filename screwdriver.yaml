@@ -26,12 +26,11 @@ jobs:
    run_test:
     steps:
      - constant: |
-         /bin/bash
-         LOGINFO=("${MYSQL_HOST}" "${MYSQL_USER}" "${MYSQL_PASSWD}" "${MYSQL_DB}")
+         set LOGINFO "${MYSQL_HOST}" "${MYSQL_USER}" "${MYSQL_PASSWD}" "${MYSQL_DB}"
+         set DEF_TEST_PARAMETER "${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${DEF_THREAD_NUM}" "5" "${WORKLOAD_READ_WRITE}"
+         set DEF_INNODB_PARAMETER ${DEF_INNODB_BUFFER_POOL_SIZE} ${DEF_INNODB_IO_CAPACITY}
          echo ${LOGINFO}
-         DEF_TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${DEF_THREAD_NUM}" "5" "${WORKLOAD_READ_WRITE}")
-         DEF_INNODB_PARAMETER=(${DEF_INNODB_BUFFER_POOL_SIZE} ${DEF_INNODB_IO_CAPACITY})
-         exit
+         echo ${LOGINFO[1]}
      - install-pip: |
          apt-get -y update
          apt-get install -y python3-pip
