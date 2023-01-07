@@ -51,6 +51,7 @@ jobs:
      - test: |
          chmod u+x workload.sh
          ./workload.sh ${LOGINFO} ${DEF_TEST_PARAMETER} ${DEF_INNODB_PARAMETER} "metrics.csv"
+         ./workload.sh ${MYSQL_HOST} ${MYSQL_USER} ${MYSQL_PASSWD} ${MYSQL_DB} ${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${DEF_THREAD_NUM} 5 ${WORKLOAD_READ_WRITE} ${DEF_INNODB_BUFFER_POOL_SIZE} ${DEF_INNODB_IO_CAPACITY} "metrics.csv"
     #  - exec-read-write-workload: |
     #      WORKLOAD=${WORKLOAD_READ_WRITE}
 
