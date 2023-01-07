@@ -8,129 +8,128 @@ shared:
     MYSQL_USER: test
     MYSQL_PASSWD: test
     MYSQL_DB: test
-    TABLE_NUM: 4
-    TABLE_SIZE: 1000000
-    INNODB_BUFFER_POOL_SIZE: 134217728 
-    INNODB_IO_CAPACITY: 200
+    DEF_TABLE_NUM: 4
+    DEF_TABLE_SIZE: 1000000
+    DEF_INNODB_BUFFER_POOL_SIZE: 134217728 
+    DEF_INNODB_IO_CAPACITY: 200
+    DEF_THREAD_NUM: 2
     LOW: 2
     MEDIUM: 4
     HIGH: 6
-    SMALL: 100
-    GIANT: 100000000
-    TEST_DURATION: 300
+    DEF_TEST_DURATION: 300
     SLEEP_DURATION: 80
     WORKLOAD_READ_WRITE: oltp_read_write
     WORKLOAD_WRITE_ONLY: oltp_write_only
     WORKLOAD_READ_ONLY: oltp_read_only
-    TEST_WORKLOAD_001_LOW: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${LOW} --time=${TEST_DURATION} ${WORKLOAD_READ_WRITE} run
-    TEST_WORKLOAD_001_MEDIUM: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${MEDIUM} --time=${TEST_DURATION} ${WORKLOAD_READ_WRITE} run
-    TEST_WORKLOAD_001_HIGH: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${HIGH} --time=${TEST_DURATION} ${WORKLOAD_READ_WRITE} run
-    TEST_WORKLOAD_002_LOW: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${LOW} --time=${TEST_DURATION} ${WORKLOAD_WRITE_ONLY} run
-    TEST_WORKLOAD_002_MEDIUM: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${MEDIUM} --time=${TEST_DURATION} ${WORKLOAD_WRITE_ONLY} run
-    TEST_WORKLOAD_002_HIGH: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${HIGH} --time=${TEST_DURATION} ${WORKLOAD_WRITE_ONLY} run
-    TEST_WORKLOAD_003_LOW: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${LOW} --time=${TEST_DURATION} ${WORKLOAD_READ_ONLY} run
-    TEST_WORKLOAD_003_MEDIUM: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${MEDIUM} --time=${TEST_DURATION} ${WORKLOAD_READ_ONLY} run
-    TEST_WORKLOAD_003_HIGH: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${HIGH} --time=${TEST_DURATION} ${WORKLOAD_READ_ONLY} run
-    TEST_WORKLOAD_004_TABLESIZE_SMALL: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${SMALL} --threads=${HIGH} --time=${TEST_DURATION} ${WORKLOAD_READ_WRITE} run
-    TEST_WORKLOAD_004_TABLESIZE_GIANT: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${GIANT} --threads=${HIGH} --time=${TEST_DURATION} ${WORKLOAD_READ_WRITE} run
+
 jobs:
    run_test:
     steps:
-     - test: |
-         TABSZ=1000
-         echo $TABSZ
+     - constant: |
+         LOGINFO=("${MYSQL_HOST}" "${MYSQL_USER}" "${MYSQL_PASSWD}" "${MYSQL_DB}")
+         DEF_TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${DEF_THREAD_NUM}" "5" "${WORKLOAD_READ_WRITE}")
+         DEF_INNODB_PARAMETER=(${DEF_INNODB_BUFFER_POOL_SIZE} ${DEF_INNODB_IO_CAPACITY})
      - install-pip: |
          apt-get -y update
          apt-get install -y python3-pip
      - install-libraries: |
          pip install --upgrade pip
          pip install -r requirements.txt
+     - test: |
+         chmod u+x workload.sh
+         ./workload.sh ${LOGINFO} ${DEF_TEST_PARAMETER} ${DEF_INNODB_PARAMETER} "metrics.csv"
      - sysbench-download: wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
      - sysbench-deploy: apt-get install -y sysbench
      - sysbench-verify: sysbench --help
      - client-install: apt-get install -y default-mysql-client
      - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';" 
      - db-param-set: |
-         mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
+         mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${DEF_INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${DEF_INNODB_IO_CAPACITY}"
          mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
      - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
      - data-load: |
-         sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${LOW} oltp_common prepare
+         sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${DEF_TABLE_NUM} --table_size=${DEF_TABLE_SIZE} --threads=${DEF_THREAD_NUM} oltp_common prepare
          sleep 120
      - exec-read-write-workload: |
-         ${TEST_WORKLOAD_001_LOW}
-         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics1low.csv
-         echo "" >> ${SD_ARTIFACTS_DIR}/metrics1low.csv
-         echo "num_tables,table_size,num_threads,test_duration,workload,innodb_buffer_pool_size,innodb_io_capacity" >> ${SD_ARTIFACTS_DIR}/metrics1low.csv
-         echo "${TABLE_NUM},${TABLE_SIZE},${LOW},${TEST_DURATION},${WORKLOAD_READ_WRITE},${INNODB_BUFFER_POOL_SIZE},${INNODB_IO_CAPACITY}" >> ${SD_ARTIFACTS_DIR}/metrics1low.csv
+         WORKLOAD=${WORKLOAD_READ_WRITE}
+
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics1low.csv
+         THREAD_NUM=2
+         TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
          sleep ${SLEEP_DURATION}
 
-         ${TEST_WORKLOAD_001_MEDIUM}
-         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics1mid.csv
-         echo "" >> ${SD_ARTIFACTS_DIR}/metrics1mid.csv
-         echo "num_tables,table_size,num_threads,test_duration,workload,innodb_buffer_pool_size,innodb_io_capacity" >> ${SD_ARTIFACTS_DIR}/metrics1mid.csv
-         echo "${TABLE_NUM},${TABLE_SIZE},${MEDIUM},${TEST_DURATION},${WORKLOAD_READ_WRITE},${INNODB_BUFFER_POOL_SIZE},${INNODB_IO_CAPACITY}" >> ${SD_ARTIFACTS_DIR}/metrics1mid.csv
+
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics1mid.csv
+         THREAD_NUM=4
+         TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
          sleep ${SLEEP_DURATION}
 
-         ${TEST_WORKLOAD_001_HIGH}
-         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics1high.csv
-         echo "" >> ${SD_ARTIFACTS_DIR}/metrics1high.csv
-         echo "num_tables,table_size,num_threads,test_duration,workload,innodb_buffer_pool_size,innodb_io_capacity" >> ${SD_ARTIFACTS_DIR}/metrics1high.csv
-         echo "${TABLE_NUM},${TABLE_SIZE},${HIGH},${TEST_DURATION},${WORKLOAD_READ_WRITE},${INNODB_BUFFER_POOL_SIZE},${INNODB_IO_CAPACITY}" >> ${SD_ARTIFACTS_DIR}/metrics1high.csv
+
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics1high.csv
+         THREAD_NUM=6
+         TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
          sleep ${SLEEP_DURATION}
      - exec-write-only-workload: |
-         ${TEST_WORKLOAD_002_LOW}
-         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics2low.csv
-         echo "" >> ${SD_ARTIFACTS_DIR}/metrics2low.csv
-         echo "num_tables,table_size,num_threads,test_duration,workload,innodb_buffer_pool_size,innodb_io_capacity" >> ${SD_ARTIFACTS_DIR}/metrics2low.csv
-         echo "${TABLE_NUM},${TABLE_SIZE},${LOW},${TEST_DURATION},${WORKLOAD_WRITE_ONLY},${INNODB_BUFFER_POOL_SIZE},${INNODB_IO_CAPACITY}" >> ${SD_ARTIFACTS_DIR}/metrics2low.csv
+         WORKLOAD=${WORKLOAD_WRITE_ONLY}
+
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics2low.csv
+         THREAD_NUM=2
+         TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
          sleep ${SLEEP_DURATION}
 
-         ${TEST_WORKLOAD_002_MEDIUM}
-         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics2mid.csv
-         echo "" >> ${SD_ARTIFACTS_DIR}/metrics2mid.csv
-         echo "num_tables,table_size,num_threads,test_duration,workload,innodb_buffer_pool_size,innodb_io_capacity" >> ${SD_ARTIFACTS_DIR}/metrics2mid.csv
-         echo "${TABLE_NUM},${TABLE_SIZE},${MEDIUM},${TEST_DURATION},${WORKLOAD_WRITE_ONLY},${INNODB_BUFFER_POOL_SIZE},${INNODB_IO_CAPACITY}" >> ${SD_ARTIFACTS_DIR}/metrics2mid.csv
+
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics2mid.csv
+         THREAD_NUM=4
+         TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
          sleep ${SLEEP_DURATION}
 
-         ${TEST_WORKLOAD_002_HIGH}
-         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics2high.csv
-         echo "" >> ${SD_ARTIFACTS_DIR}/metrics2high.csv
-         echo "num_tables,table_size,num_threads,test_duration,workload,innodb_buffer_pool_size,innodb_io_capacity" >> ${SD_ARTIFACTS_DIR}/metrics2high.csv
-         echo "${TABLE_NUM},${TABLE_SIZE},${HIGH},${TEST_DURATION},${WORKLOAD_WRITE_ONLY},${INNODB_BUFFER_POOL_SIZE},${INNODB_IO_CAPACITY}" >> ${SD_ARTIFACTS_DIR}/metrics2high.csv
+
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics2high.csv
+         THREAD_NUM=6
+         TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
          sleep ${SLEEP_DURATION}
      - exec-read-only-workload: |
-         ${TEST_WORKLOAD_003_LOW}
-         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics3low.csv
-         echo "" >> ${SD_ARTIFACTS_DIR}/metrics3low.csv
-         echo "num_tables,table_size,num_threads,test_duration,workload,innodb_buffer_pool_size,innodb_io_capacity" >> ${SD_ARTIFACTS_DIR}/metrics3low.csv
-         echo "${TABLE_NUM},${TABLE_SIZE},${LOW},${TEST_DURATION},${WORKLOAD_READ_ONLY},${INNODB_BUFFER_POOL_SIZE},${INNODB_IO_CAPACITY}" >> ${SD_ARTIFACTS_DIR}/metrics3low.csv
-         sleep ${SLEEP_DURATION}
-         
-         ${TEST_WORKLOAD_003_MEDIUM}
-         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics3mid.csv
-         echo "" >> ${SD_ARTIFACTS_DIR}/metrics3mid.csv
-         echo "num_tables,table_size,num_threads,test_duration,workload,innodb_buffer_pool_size,innodb_io_capacity" >> ${SD_ARTIFACTS_DIR}/metrics3mid.csv
-         echo "${TABLE_NUM},${TABLE_SIZE},${MEDIUM},${TEST_DURATION},${WORKLOAD_READ_ONLY},${INNODB_BUFFER_POOL_SIZE},${INNODB_IO_CAPACITY}" >> ${SD_ARTIFACTS_DIR}/metrics3mid.csv
+         WORKLOAD=${WORKLOAD_READ_ONLY}
+
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics3low.csv
+         THREAD_NUM=2
+         TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
          sleep ${SLEEP_DURATION}
 
-         ${TEST_WORKLOAD_003_HIGH}
-         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics3high.csv
-         echo "" >> ${SD_ARTIFACTS_DIR}/metrics3high.csv
-         echo "num_tables,table_size,num_threads,test_duration,workload,innodb_buffer_pool_size,innodb_io_capacity" >> ${SD_ARTIFACTS_DIR}/metrics3high.csv
-         echo "${TABLE_NUM},${TABLE_SIZE},${HIGH},${TEST_DURATION},${WORKLOAD_READ_ONLY},${INNODB_BUFFER_POOL_SIZE},${INNODB_IO_CAPACITY}" >> ${SD_ARTIFACTS_DIR}/metrics3high.csv
-         sleep ${SLEEP_DURATION}
-     - exec-table-size-workload: |
-         ${TEST_WORKLOAD_004_TABLESIZE_SMALL}
-         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics4small.csv
-         echo "" >> ${SD_ARTIFACTS_DIR}/metrics4small.csv
-         echo "num_tables,table_size,num_threads,test_duration,workload,innodb_buffer_pool_size,innodb_io_capacity" >> ${SD_ARTIFACTS_DIR}/metrics4small.csv
-         echo "${TABLE_NUM},${SMALL},${LOW},${TEST_DURATION},${WORKLOAD_READ_WRITE},${INNODB_BUFFER_POOL_SIZE},${INNODB_IO_CAPACITY}" >> ${SD_ARTIFACTS_DIR}/metrics4small.csv
-         sleep ${SLEEP_DURATION}
+
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics3mid.csv
+         THREAD_NUM=4
+         TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
          
-         ${TEST_WORKLOAD_003_MEDIUM}
-         python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics4giant.csv
-         echo "" >> ${SD_ARTIFACTS_DIR}/metrics4giant.csv
-         echo "num_tables,table_size,num_threads,test_duration,workload,innodb_buffer_pool_size,innodb_io_capacity" >> ${SD_ARTIFACTS_DIR}/metrics4giant.csv
-         echo "${TABLE_NUM},${GIANT},${MEDIUM},${TEST_DURATION},${WORKLOAD_READ_WRITE},${INNODB_BUFFER_POOL_SIZE},${INNODB_IO_CAPACITY}" >> ${SD_ARTIFACTS_DIR}/metrics4giant.csv
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
+
+
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics3high.csv
+         THREAD_NUM=6
+         TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
+     - exec-small-table-workload: |
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics4small.csv
+         TABLE_SIZE=100
+         THREAD_NUM=6
+         TEST_PARAMETER=("${DEF_TABLE_NUM}" "${TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
          sleep ${SLEEP_DURATION}
