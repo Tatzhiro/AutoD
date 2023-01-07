@@ -8,8 +8,8 @@ shared:
     MYSQL_USER: test
     MYSQL_PASSWD: test
     MYSQL_DB: test
-    DEF_TABLE_NUM: 1
-    DEF_TABLE_SIZE: 100
+    DEF_TABLE_NUM: 4
+    DEF_TABLE_SIZE: 1000000
     DEF_INNODB_BUFFER_POOL_SIZE: 134217728 
     DEF_INNODB_IO_CAPACITY: 200
     DEF_THREAD_NUM: 2
@@ -25,11 +25,6 @@ shared:
 jobs:
    run_test:
     steps:
-     - constant: |
-         LOGINFO="${MYSQL_HOST} ${MYSQL_USER} ${MYSQL_PASSWD} ${MYSQL_DB}"
-         DEF_TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${DEF_THREAD_NUM} 5 ${WORKLOAD_READ_WRITE}"
-         DEF_INNODB_PARAMETER="${DEF_INNODB_BUFFER_POOL_SIZE} ${DEF_INNODB_IO_CAPACITY}"
-         echo ${LOGINFO}
      - install-pip: |
          apt-get -y update
          apt-get install -y python3-pip
@@ -47,90 +42,92 @@ jobs:
      - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
      - data-load: |
          sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${DEF_TABLE_NUM} --table_size=${DEF_TABLE_SIZE} --threads=${DEF_THREAD_NUM} oltp_common prepare
-        #  sleep 120
-     - test: |
+         sleep 120
+     - prepare-variables: |
+         LOGINFO="${MYSQL_HOST} ${MYSQL_USER} ${MYSQL_PASSWD} ${MYSQL_DB}"
+         DEF_TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${DEF_THREAD_NUM} 5 ${WORKLOAD_READ_WRITE}"
+         DEF_INNODB_PARAMETER="${DEF_INNODB_BUFFER_POOL_SIZE} ${DEF_INNODB_IO_CAPACITY}"
          chmod u+x workload.sh
-         ./workload.sh ${LOGINFO} ${DEF_TEST_PARAMETER} ${DEF_INNODB_PARAMETER} "${SD_ARTIFACTS_DIR}/metrics.csv"
-    #  - exec-read-write-workload: |
-    #      WORKLOAD=${WORKLOAD_READ_WRITE}
+     - exec-read-write-workload: |
+         WORKLOAD=${WORKLOAD_READ_WRITE}
 
-    #      FILENAME=${SD_ARTIFACTS_DIR}/metrics1low.csv
-    #      THREAD_NUM=2
-    #      TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics1low.csv
+         THREAD_NUM=2
+         TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
 
-    #      ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
-    #      sleep ${SLEEP_DURATION}
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
 
 
-    #      FILENAME=${SD_ARTIFACTS_DIR}/metrics1mid.csv
-    #      THREAD_NUM=4
-    #      TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics1mid.csv
+         THREAD_NUM=4
+         TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
          
-    #      ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
-    #      sleep ${SLEEP_DURATION}
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
 
 
-    #      FILENAME=${SD_ARTIFACTS_DIR}/metrics1high.csv
-    #      THREAD_NUM=6
-    #      TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics1high.csv
+         THREAD_NUM=6
+         TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
          
-    #      ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
-    #      sleep ${SLEEP_DURATION}
-    #  - exec-write-only-workload: |
-    #      WORKLOAD=${WORKLOAD_WRITE_ONLY}
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
+     - exec-write-only-workload: |
+         WORKLOAD=${WORKLOAD_WRITE_ONLY}
 
-    #      FILENAME=${SD_ARTIFACTS_DIR}/metrics2low.csv
-    #      THREAD_NUM=2
-    #      TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics2low.csv
+         THREAD_NUM=2
+         TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
 
-    #      ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
-    #      sleep ${SLEEP_DURATION}
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
 
 
-    #      FILENAME=${SD_ARTIFACTS_DIR}/metrics2mid.csv
-    #      THREAD_NUM=4
-    #      TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics2mid.csv
+         THREAD_NUM=4
+         TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
          
-    #      ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
-    #      sleep ${SLEEP_DURATION}
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
 
 
-    #      FILENAME=${SD_ARTIFACTS_DIR}/metrics2high.csv
-    #      THREAD_NUM=6
-    #      TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics2high.csv
+         THREAD_NUM=6
+         TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
          
-    #      ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
-    #      sleep ${SLEEP_DURATION}
-    #  - exec-read-only-workload: |
-    #      WORKLOAD=${WORKLOAD_READ_ONLY}
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
+     - exec-read-only-workload: |
+         WORKLOAD=${WORKLOAD_READ_ONLY}
 
-    #      FILENAME=${SD_ARTIFACTS_DIR}/metrics3low.csv
-    #      THREAD_NUM=2
-    #      TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics3low.csv
+         THREAD_NUM=2
+         TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION ${WORKLOAD}"
 
-    #      ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
-    #      sleep ${SLEEP_DURATION}
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
 
 
-    #      FILENAME=${SD_ARTIFACTS_DIR}/metrics3mid.csv
-    #      THREAD_NUM=4
-    #      TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics3mid.csv
+         THREAD_NUM=4
+         TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
          
-    #      ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
-    #      sleep ${SLEEP_DURATION}
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
 
 
-    #      FILENAME=${SD_ARTIFACTS_DIR}/metrics3high.csv
-    #      THREAD_NUM=6
-    #      TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics3high.csv
+         THREAD_NUM=6
+         TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
          
-    #      ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
-    #      sleep ${SLEEP_DURATION}
-    #  - exec-small-table-workload: |
-    #      FILENAME=${SD_ARTIFACTS_DIR}/metrics4small.csv
-    #      TABLE_SIZE=100
-    #      THREAD_NUM=6
-    #      TEST_PARAMETER=("${DEF_TABLE_NUM}" "${TABLE_SIZE}" "${THREAD_NUM}" "${DEF_TEST_DURATION}" "${WORKLOAD}")
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
+     - exec-small-table-workload: |
+         FILENAME=${SD_ARTIFACTS_DIR}/metrics4small.csv
+         TABLE_SIZE=100
+         THREAD_NUM=6
+         TEST_PARAMETER="${DEF_TABLE_NUM} ${TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD_READ_WRITE}"
          
-    #      ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
-    #      sleep ${SLEEP_DURATION}
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
