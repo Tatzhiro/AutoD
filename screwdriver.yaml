@@ -36,7 +36,6 @@ jobs:
      - install-libraries: |
          pip install --upgrade pip
          pip install -r requirements.txt
-     - test1: python3 exporter.py
      - sysbench-download: wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
      - sysbench-deploy: apt-get install -y sysbench
      - sysbench-verify: sysbench --help
@@ -51,8 +50,7 @@ jobs:
         #  sleep 120
      - test: |
          chmod u+x workload.sh
-         touch pp.csv
-         ./workload.sh ${LOGINFO} ${DEF_TEST_PARAMETER} ${DEF_INNODB_PARAMETER} "pp.csv"
+         ./workload.sh ${LOGINFO} ${DEF_TEST_PARAMETER} ${DEF_INNODB_PARAMETER} "${SD_ARTIFACTS_DIR}/metrics.csv"
     #  - exec-read-write-workload: |
     #      WORKLOAD=${WORKLOAD_READ_WRITE}
 
