@@ -26,7 +26,7 @@ jobs:
    run_test:
     steps:
      - constant: |
-         set -A array value1 value2 value3
+         set array value1 value2 value3
          echo ${array}
          LOGINFO=("${MYSQL_HOST}" "${MYSQL_USER}" "${MYSQL_PASSWD}" "${MYSQL_DB}") | bash
          DEF_TEST_PARAMETER=("${DEF_TABLE_NUM}" "${DEF_TABLE_SIZE}" "${DEF_THREAD_NUM}" "5" "${WORKLOAD_READ_WRITE}") | bash
