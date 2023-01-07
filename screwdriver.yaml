@@ -36,9 +36,6 @@ jobs:
      - install-libraries: |
          pip install --upgrade pip
          pip install -r requirements.txt
-     - test: |
-         chmod u+x workload.sh
-         ./workload.sh ${LOGINFO} ${DEF_TEST_PARAMETER} ${DEF_INNODB_PARAMETER} "metrics.csv"
      - sysbench-download: wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
      - sysbench-deploy: apt-get install -y sysbench
      - sysbench-verify: sysbench --help
@@ -50,7 +47,10 @@ jobs:
      - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
      - data-load: |
          sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${DEF_TABLE_NUM} --table_size=${DEF_TABLE_SIZE} --threads=${DEF_THREAD_NUM} oltp_common prepare
-         sleep 120
+        #  sleep 120
+     - test: |
+         chmod u+x workload.sh
+         ./workload.sh ${LOGINFO} ${DEF_TEST_PARAMETER} ${DEF_INNODB_PARAMETER} "metrics.csv"
      - exec-read-write-workload: |
          WORKLOAD=${WORKLOAD_READ_WRITE}
 
