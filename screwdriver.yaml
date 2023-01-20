@@ -152,4 +152,4 @@ jobs:
          
          ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
          sleep ${SLEEP_DURATION}
-     - make-train-csv: python3 concat_csv.py -f test.csv -p ${TEST_DIR}
+     - make-test-csv: python3 concat_csv.py -f test.csv -p ${TEST_DIR}
