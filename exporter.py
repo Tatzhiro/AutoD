@@ -9,6 +9,19 @@ import time
 import requests
 import urllib3
 
+# create a keyvalue class
+class keyvalue(argparse.Action):
+    # Constructor calling
+    def __call__( self , parser, namespace,
+                 values, option_string = None):
+        setattr(namespace, self.dest, dict())
+          
+        for value in values:
+            # split it into key and value
+            key, value = value.split('=')
+            # assign into dictionary
+            getattr(namespace, self.dest)[key] = value
+
 def set_query_in_params(params, query):
     params['query'] = query
     return params
@@ -81,7 +94,29 @@ def output_csv(filepath, results, queryNames):
                 except KeyError:
                     row[queryName] = ''
             writer.writerow(row)
-    
+
+def add_column(filepath, label, value):
+    # input file name
+    file_name = filepath
+
+    # label name and value
+    label_name = label
+    label_value = value
+
+    # read input file
+    with open(file_name, "r") as file:
+        reader = csv.reader(file)
+        data = list(reader)
+
+    # add label column
+    data[0].append(label_name)
+    for row in data[1:]:
+        row.append(label_value)
+
+    # write output file
+    with open(file_name, "w", newline="") as file:
+        writer = csv.writer(file)
+        writer.writerows(data)
 
 def main(args):
     osMetrics = ['CPU Usage %', 
@@ -102,14 +137,16 @@ def main(args):
 
     innodbMetrics = ['innodb reads/s',
                      'innodb writes/s', 
-                     'innodb_buf_size',
                      'innodb buffer pool hit rate',
-                     'innodb I/O (MB/s)']
+                     'innodb I/O (MB/s)',
+                     'innodb_buffer_pool',
+                     'innodb_io_capacity']
     innodbQueries = ['rate(mysql_global_status_innodb_data_reads[1m])',
                      'rate(mysql_global_status_innodb_data_writes[1m])',
-                     'mysql_global_variables_innodb_buffer_pool_size /1024^3',
                      '(1 - rate(mysql_global_status_innodb_buffer_pool_reads[1m]) / rate(mysql_global_status_innodb_buffer_pool_read_requests[1m])) * 100',
-                     '(rate(mysql_global_status_innodb_data_read[1m]) + rate(mysql_global_status_innodb_data_written[1m])) / 1024^2']
+                     '(rate(mysql_global_status_innodb_data_read[1m]) + rate(mysql_global_status_innodb_data_written[1m])) / 1024^2',
+                     'mysql_global_variables_innodb_buffer_pool_size',
+                     'mysql_global_variables_innodb_io_capacity']
 
     mysqlMetrics = ['threads running/s', 
                     'handler call/s', 
@@ -136,6 +173,8 @@ def main(args):
     url = 'http://20.222.144.239:9090/api/v1/query_range'
     results = send_requests(args, queries, url)
     output_csv(args.filename, results, queryName)
+    for key, value in args.configs.items():
+        add_column(args.filename, key, value)
 
 
 if __name__ == "__main__":
@@ -165,5 +204,8 @@ if __name__ == "__main__":
                         type=str,
                         default='5s',
                         help='データポイントの間隔（秒）を指定します')
+    parser.add_argument('--configs', 
+                        nargs='*', 
+                        action=keyvalue)
     args = parser.parse_args()
     main(args)

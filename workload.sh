@@ -11,7 +11,4 @@ FILENAME=${12}
 
 
 sysbench --db-driver=mysql --mysql-host=$1 --mysql-user=$2 --mysql-password=$3 --mysql-db=$4 --tables=${NUM_TABLES} --table_size=${TABLE_SIZE} --threads=${NUM_THREADS} --time=${TEST_DURATION} ${OLTP_WORK} run
-python3 exporter.py -f ${FILENAME}
-echo "" >> ${FILENAME}
-echo "num_tables,table_size,num_threads,test_duration,workload,innodb_buffer_pool_size,innodb_io_capacity" >> ${FILENAME}
-echo "${NUM_TABLES},${TABLE_SIZE},${NUM_THREADS},${TEST_DURATION},${OLTP_WORK},${INNO_BUF_SIZE},${INNO_IO_CAP}" >> ${FILENAME}
+python3 exporter.py --configs label=${OLTP_WORK} tablesize=${TABLE_SIZE} -f ${FILENAME}

@@ -16,7 +16,7 @@ shared:
     LOW: 2
     MEDIUM: 4
     HIGH: 6
-    DEF_TEST_DURATION: 300
+    DEF_TEST_DURATION: 5
     SLEEP_DURATION: 80
     WORKLOAD_READ_WRITE: oltp_read_write
     WORKLOAD_WRITE_ONLY: oltp_write_only
@@ -42,16 +42,19 @@ jobs:
      - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
      - data-load: |
          sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${DEF_TABLE_NUM} --table_size=${DEF_TABLE_SIZE} --threads=${DEF_THREAD_NUM} oltp_common prepare
-         sleep 120
+         sleep ${SLEEP_DURATION}
      - prepare-variables: |
          LOGINFO="${MYSQL_HOST} ${MYSQL_USER} ${MYSQL_PASSWD} ${MYSQL_DB}"
          DEF_TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${DEF_THREAD_NUM} 5 ${WORKLOAD_READ_WRITE}"
          DEF_INNODB_PARAMETER="${DEF_INNODB_BUFFER_POOL_SIZE} ${DEF_INNODB_IO_CAPACITY}"
+         TRAIN_DIR=${SD_ARTIFACTS_DIR}/train
+         TEST_DIR=${SD_ARTIFACTS_DIR}/test
          chmod u+x workload.sh
+     - prepare-for-train.csv: mkdir ${SD_ARTIFACTS_DIR}/train
      - exec-read-write-workload: |
          WORKLOAD=${WORKLOAD_READ_WRITE}
 
-         FILENAME=${SD_ARTIFACTS_DIR}/metrics1low.csv
+         FILENAME=${TRAIN_DIR}/metrics1low.csv
          THREAD_NUM=2
          TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
 
@@ -59,7 +62,7 @@ jobs:
          sleep ${SLEEP_DURATION}
 
 
-         FILENAME=${SD_ARTIFACTS_DIR}/metrics1mid.csv
+         FILENAME=${TRAIN_DIR}/metrics1mid.csv
          THREAD_NUM=4
          TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
          
@@ -67,7 +70,7 @@ jobs:
          sleep ${SLEEP_DURATION}
 
 
-         FILENAME=${SD_ARTIFACTS_DIR}/metrics1high.csv
+         FILENAME=${TRAIN_DIR}/metrics1high.csv
          THREAD_NUM=6
          TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
          
@@ -76,7 +79,7 @@ jobs:
      - exec-write-only-workload: |
          WORKLOAD=${WORKLOAD_WRITE_ONLY}
 
-         FILENAME=${SD_ARTIFACTS_DIR}/metrics2low.csv
+         FILENAME=${TRAIN_DIR}/metrics2low.csv
          THREAD_NUM=2
          TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
 
@@ -84,7 +87,7 @@ jobs:
          sleep ${SLEEP_DURATION}
 
 
-         FILENAME=${SD_ARTIFACTS_DIR}/metrics2mid.csv
+         FILENAME=${TRAIN_DIR}/metrics2mid.csv
          THREAD_NUM=4
          TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
          
@@ -92,7 +95,7 @@ jobs:
          sleep ${SLEEP_DURATION}
 
 
-         FILENAME=${SD_ARTIFACTS_DIR}/metrics2high.csv
+         FILENAME=${TRAIN_DIR}/metrics2high.csv
          THREAD_NUM=6
          TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
          
@@ -101,7 +104,7 @@ jobs:
      - exec-read-only-workload: |
          WORKLOAD=${WORKLOAD_READ_ONLY}
 
-         FILENAME=${SD_ARTIFACTS_DIR}/metrics3low.csv
+         FILENAME=${TRAIN_DIR}/metrics3low.csv
          THREAD_NUM=2
          TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
 
@@ -109,7 +112,7 @@ jobs:
          sleep ${SLEEP_DURATION}
 
 
-         FILENAME=${SD_ARTIFACTS_DIR}/metrics3mid.csv
+         FILENAME=${TRAIN_DIR}/metrics3mid.csv
          THREAD_NUM=4
          TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
          
@@ -117,17 +120,36 @@ jobs:
          sleep ${SLEEP_DURATION}
 
 
-         FILENAME=${SD_ARTIFACTS_DIR}/metrics3high.csv
+         FILENAME=${TRAIN_DIR}/metrics3high.csv
          THREAD_NUM=6
          TEST_PARAMETER="${DEF_TABLE_NUM} ${DEF_TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD}"
          
          ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
          sleep ${SLEEP_DURATION}
+     - make-train.csv: python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
+
+     - prepare-for-test.csv: mkdir ${SD_ARTIFACTS_DIR}/test
      - exec-small-table-workload: |
-         FILENAME=${SD_ARTIFACTS_DIR}/metrics4small.csv
          TABLE_SIZE=100
+
+         FILENAME=${TEST_DIR}/metrics4small_low.csv
+         THREAD_NUM=2
+         TEST_PARAMETER="${DEF_TABLE_NUM} ${TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD_READ_WRITE}"
+         
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
+
+         FILENAME=${TEST_DIR}/metrics4small_mid.csv
+         THREAD_NUM=4
+         TEST_PARAMETER="${DEF_TABLE_NUM} ${TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD_READ_WRITE}"
+         
+         ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
+         sleep ${SLEEP_DURATION}
+
+         FILENAME=${TEST_DIR}/metrics4small_high.csv
          THREAD_NUM=6
          TEST_PARAMETER="${DEF_TABLE_NUM} ${TABLE_SIZE} ${THREAD_NUM} ${DEF_TEST_DURATION} ${WORKLOAD_READ_WRITE}"
          
          ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
          sleep ${SLEEP_DURATION}
+     - make-train.csv: python3 concat_csv.py -f test.csv -p ${TEST_DIR}
