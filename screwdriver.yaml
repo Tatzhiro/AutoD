@@ -17,7 +17,7 @@ shared:
     MEDIUM: 4
     HIGH: 6
     DEF_TEST_DURATION: 5
-    SLEEP_DURATION: 80
+    SLEEP_DURATION: 0
     WORKLOAD_READ_WRITE: oltp_read_write
     WORKLOAD_WRITE_ONLY: oltp_write_only
     WORKLOAD_READ_ONLY: oltp_read_only
