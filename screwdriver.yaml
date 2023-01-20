@@ -48,5 +48,8 @@ jobs:
          mkdir ${SD_ARTIFACTS_DIR}/test
      - test: |
          python3 make_csv.py -p ${SD_ARTIFACTS_DIR} -t 1 -s 0
-     - make-train-csv: python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
-     - make-test-csv: python3 concat_csv.py -f test.csv -p ${TEST_DIR}
+     - make-csv: | 
+         TRAIN_DIR=${SD_ARTIFACTS_DIR}/train
+         TEST_DIR=${SD_ARTIFACTS_DIR}/test
+         python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
+         python3 concat_csv.py -f test.csv -p ${TEST_DIR}
