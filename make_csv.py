@@ -23,22 +23,22 @@ def main():
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='make training data csv')
-  parser.add_argument('-h', '--host',
+  parser.add_argument('--host',
                       action='store',
                       type=str,
                       default="20.222.144.239",
                       help='mysql host')
-  parser.add_argument('-u', '--user',
+  parser.add_argument('--user',
                       action='store',
                       type=str,
                       default="test",
                       help='mysql user')
-  parser.add_argument('-p', '--password',
+  parser.add_argument('--password',
                       action='store',
                       type=str,
                       default="test",
                       help='mysql password')
-  parser.add_argument('-d', '--db',
+  parser.add_argument('--db',
                       action='store',
                       type=str,
                       default="test",
@@ -53,17 +53,17 @@ if __name__ == "__main__":
                       type=str,
                       default="4",
                       help='table num')
-  parser.add_argument('-s', '--time',
+  parser.add_argument('-t', '--time',
                       action='store',
                       type=str,
                       default="300",
                       help='test duration')
-  parser.add_argument('--path',
+  parser.add_argument('-p', '--path',
                       action='store',
                       type=str,
                       required=True,
                       help='test duration')
-  parser.add_argument('--sleep',
+  parser.add_argument('s', '--sleep',
                       action='store',
                       type=int,
                       default=80,
