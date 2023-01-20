@@ -69,4 +69,4 @@ if __name__ == "__main__":
                       default=80,
                       help='sleep duration')
   args = parser.parse_args()
-  main(args)
+  main()
