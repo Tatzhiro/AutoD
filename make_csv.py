@@ -63,7 +63,7 @@ if __name__ == "__main__":
                       type=str,
                       required=True,
                       help='test duration')
-  parser.add_argument('s', '--sleep',
+  parser.add_argument('-s', '--sleep',
                       action='store',
                       type=int,
                       default=80,
