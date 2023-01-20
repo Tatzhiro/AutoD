@@ -8,20 +8,11 @@ shared:
     MYSQL_USER: test
     MYSQL_PASSWD: test
     MYSQL_DB: test
-    DEF_TABLE_NUM: 1
-    DEF_TABLE_SIZE: 100
-    DEF_INNODB_BUFFER_POOL_SIZE: 134217728 
-    DEF_INNODB_IO_CAPACITY: 200
-    DEF_THREAD_NUM: 2
-    LOW: 2
-    MEDIUM: 4
-    HIGH: 6
-    DEF_TEST_DURATION: 1
-    SLEEP_DURATION: 0
-    WORKLOAD_READ_WRITE: oltp_read_write
-    WORKLOAD_WRITE_ONLY: oltp_write_only
-    WORKLOAD_READ_ONLY: oltp_read_only
-
+    TABLE_NUM: 4
+    TABLE_SIZE: 1000000
+    INNODB_BUFFER_POOL_SIZE: 134217728 
+    INNODB_IO_CAPACITY: 200
+    THREAD_NUM: 4
 jobs:
    run_test:
     steps:
@@ -37,17 +28,17 @@ jobs:
      - client-install: apt-get install -y default-mysql-client
      - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';" 
      - db-param-set: |
-         mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${DEF_INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${DEF_INNODB_IO_CAPACITY}"
+         mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
          mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
      - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
      - data-load: |
-         sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${DEF_TABLE_NUM} --table_size=${DEF_TABLE_SIZE} --threads=${DEF_THREAD_NUM} oltp_common prepare
-         sleep ${SLEEP_DURATION}
+         sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${THREAD_NUM} oltp_common prepare
+         sleep 80
      - mkdir-for-train-and-test: |
          mkdir ${SD_ARTIFACTS_DIR}/train
          mkdir ${SD_ARTIFACTS_DIR}/test
      - test: |
-         python3 make_csv.py -p ${SD_ARTIFACTS_DIR} -t 1 -s 0
+         python3 make_csv.py -p ${SD_ARTIFACTS_DIR}
      - make-csv: | 
          TRAIN_DIR=${SD_ARTIFACTS_DIR}/train
          TEST_DIR=${SD_ARTIFACTS_DIR}/test
