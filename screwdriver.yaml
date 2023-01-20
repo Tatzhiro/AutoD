@@ -50,7 +50,7 @@ jobs:
          TRAIN_DIR=${SD_ARTIFACTS_DIR}/train
          TEST_DIR=${SD_ARTIFACTS_DIR}/test
          chmod u+x workload.sh
-     - prepare-for-train.csv: mkdir ${SD_ARTIFACTS_DIR}/train
+     - prepare-for-train-csv: mkdir ${SD_ARTIFACTS_DIR}/train
      - exec-read-write-workload: |
          WORKLOAD=${WORKLOAD_READ_WRITE}
 
@@ -126,9 +126,9 @@ jobs:
          
          ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
          sleep ${SLEEP_DURATION}
-     - make-train.csv: python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
+     - make-train-csv: python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
 
-     - prepare-for-test.csv: mkdir ${SD_ARTIFACTS_DIR}/test
+     - prepare-for-test-csv: mkdir ${SD_ARTIFACTS_DIR}/test
      - exec-small-table-workload: |
          TABLE_SIZE=100
 
@@ -152,4 +152,4 @@ jobs:
          
          ./workload.sh ${LOGINFO} ${TEST_PARAMETER} ${DEF_INNODB_PARAMETER} ${FILENAME}
          sleep ${SLEEP_DURATION}
-     - make-train.csv: python3 concat_csv.py -f test.csv -p ${TEST_DIR}
+     - make-train-csv: python3 concat_csv.py -f test.csv -p ${TEST_DIR}
