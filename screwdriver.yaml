@@ -3,7 +3,7 @@ shared:
         screwdriver.cd/timeout: 2880
         screwdriver.cd/cpu: HIGH
     requires: [~commit, ~pr]
-    image: centos7-build-base:latest
+    image: buildpack-deps
     environment:
         MYSQL_HOST: 20.222.144.239
         MYSQL_USER: test
@@ -30,12 +30,13 @@ jobs:
     collect_data:
         steps:
             - install-dependencies: |
-                  yum install -y yj-python38 yj-pip-config
+                  apt-get install -y yj-python38 yj-pip-config
                   export PATH=/opt/yj/python38/bin:$PATH
                   python3 -m pip install --upgrade pip
                   pip3 install -r ../requirements.txt
-                  sudo yum install --enablerepo='epel' -y sysbench 
-                  sudo yum install -y mysql-community-client
+                  wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
+                  apt-get install -y sysbench
+                  apt-get install -y default-mysql-client
             - sysbench-verify: sysbench --help
             - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';"
             - db-param-set: |
@@ -60,8 +61,9 @@ jobs:
         requires: [collect_data]
         steps:
             - run_prep: |
-                sudo yum install --enablerepo='epel' -y sysbench 
-                sudo yum install -y mysql-community-client 
+                wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
+                apt-get install -y sysbench
+                apt-get install -y default-mysql-client
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'hostname'"
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB}; show databases"
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
@@ -86,7 +88,7 @@ jobs:
                 mv ${SD_ARTIFACTS_DIR}/train/train.csv AutoDB/sd_samples_yj/ml4db/dataset
                 mv ${SD_ARTIFACTS_DIR}/test/test.csv AutoDB/sd_samples_yj/ml4db/dataset
                 cd AutoDB/sd_samples_yj/ml4db/src
-                yum install -y yj-python38 yj-pip-config
+                apt-get install -y yj-python38 yj-pip-config
                 export PATH=/opt/yj/python38/bin:$PATH
                 python3 -m pip install --upgrade pip
                 pip3 install -r ../requirements.txt
@@ -104,9 +106,9 @@ jobs:
             - run_assessment: |
                 AUTO_INNODB_BUFFER_POOL_SIZE=`meta get auto_innodb_buffer_pool_size`
                 AUTO_INNODB_IO_CAPACITY=`meta get auto_innodb_io_capacity`
-                sudo yum install --enablerepo='epel' -y sysbench
-                sysbench --help
-                sudo yum install -y mysql-community-client 
+                wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
+                apt-get install -y sysbench
+                apt-get install -y default-mysql-client
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${AUTO_INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${AUTO_INNODB_IO_CAPACITY}"
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
                 sleep 60
