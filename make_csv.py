@@ -4,7 +4,7 @@ from time import sleep
 
 def main():
   workloads = ["oltp_read_write", "oltp_read_only", "oltp_write_only"]
-  threads = [2, 4, 6]
+  threads = [1, 10, 60]
   buf_sizes = [134217728, 1073741824, 16777216]
   io_caps = [100, 200, 400]
   count = 0

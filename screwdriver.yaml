@@ -1,46 +1,124 @@
 shared:
-  annotations:
-    screwdriver.cd/timeout: 2880
-  requires: [ ~commit, ~pr ]
-  image: buildpack-deps
-  environment:
-    MYSQL_HOST: 20.222.144.239
-    MYSQL_USER: test
-    MYSQL_PASSWD: test
-    MYSQL_DB: test
-    TABLE_NUM: 4
-    TABLE_SIZE: 1000000
-    INNODB_BUFFER_POOL_SIZE: 134217728 
-    INNODB_IO_CAPACITY: 200
-    THREAD_NUM: 4
+    annotations:
+        screwdriver.cd/timeout: 2880
+    requires: [~commit, ~pr]
+    image: centos7-build-base:latest
+    environment:
+        MYSQL_HOST: 20.222.144.239
+        MYSQL_USER: test
+        MYSQL_PASSWD: test
+        MYSQL_DB: test
+        TABLE_NUM: 4
+        TABLE_SIZE: 1
+        INNODB_BUFFER_POOL_SIZE: 134217728
+        INNODB_IO_CAPACITY: 200
+        THREAD_NUM: 60
+
+        LOW: 1
+        MEDIUM: 10
+        HIGH: 60
+        PREP_API: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --threads=10 --tables=10 --create_secondary=on --table_size=${TABLE_SIZE} oltp_read_write prepare
+        TEST_API_001_LOW: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --threads=${LOW} --tables=10 --table_size=${TABLE_SIZE} --time=${TEST_DURATION} oltp_read_write run
+        TEST_API_001_MEDIUM: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --threads=${MEDIUM} --tables=10 --table_size=${TABLE_SIZE} --time=${TEST_DURATION} oltp_read_write run
+        TEST_API_001_HIGH: sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --threads=${HIGH} --tables=10 --table_size=${TABLE_SIZE} --threads=${HIGH} --time=${TEST_DURATION} oltp_read_write run
+        DEFAULT_LATENCY: 0
+        AUTO_LATENCY: 0
+        AUTO_INNODB_BUFFER_POOL_SIZE: 0
+        AUTO_INNODB_IO_CAPACITY: 0
 jobs:
-   run_test:
+    collect_data:
+        steps:
+            - install-dependencies: |
+                  yum install -y yj-python38 yj-pip-config
+                  export PATH=/opt/yj/python38/bin:$PATH
+                  python3 -m pip install --upgrade pip
+                  pip3 install -r ../requirements.txt
+                  sudo yum install --enablerepo='epel' -y sysbench 
+                  sudo yum install -y mysql-community-client
+            - sysbench-verify: sysbench --help
+            - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';"
+            - db-param-set: |
+                  mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
+                  mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
+            - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
+            - data-load: |
+                  sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${THREAD_NUM} oltp_common prepare
+                #   sleep 80
+            - mkdir-for-train-and-test: |
+                  mkdir ${SD_ARTIFACTS_DIR}/train
+                  mkdir ${SD_ARTIFACTS_DIR}/test
+            - test: |
+                  python3 make_csv.py -s 0 -t 1 -p ${SD_ARTIFACTS_DIR}
+            - make-csv: |
+                  TRAIN_DIR=${SD_ARTIFACTS_DIR}/train
+                  TEST_DIR=${SD_ARTIFACTS_DIR}/test
+                  python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
+                  python3 concat_csv.py -f test.csv -p ${TEST_DIR}
+
+app_perf_test:
+    requires: [collect_data]
     steps:
-     - install-pip: |
-         apt-get -y update
-         apt-get install -y python3-pip
-     - install-libraries: |
-         pip install --upgrade pip
-         pip install -r requirements.txt
-     - sysbench-download: wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
-     - sysbench-deploy: apt-get install -y sysbench
-     - sysbench-verify: sysbench --help
-     - client-install: apt-get install -y default-mysql-client
-     - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';" 
-     - db-param-set: |
-         mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
-         mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
-     - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
-     - data-load: |
-         sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${THREAD_NUM} oltp_common prepare
-         sleep 80
-     - mkdir-for-train-and-test: |
-         mkdir ${SD_ARTIFACTS_DIR}/train
-         mkdir ${SD_ARTIFACTS_DIR}/test
-     - test: |
-         python3 make_csv.py -p ${SD_ARTIFACTS_DIR}
-     - make-csv: | 
-         TRAIN_DIR=${SD_ARTIFACTS_DIR}/train
-         TEST_DIR=${SD_ARTIFACTS_DIR}/test
-         python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
-         python3 concat_csv.py -f test.csv -p ${TEST_DIR}
+        - run_prep: |
+              sudo yum install --enablerepo='epel' -y sysbench 
+              sudo yum install -y mysql-community-client 
+              mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'hostname'"
+              mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB}; show databases"
+              mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
+              ${PREP_API}
+            #   sleep 60
+            #   ${PREP_API}
+            #   sleep 300
+        - run_test: |
+              ${TEST_API_001_HIGH} | tee default.txt
+              cat default.txt
+              grep -i "avg:" default.txt | awk '{ print $2 }'
+              DEFAULT_LATENCY=`grep -i "avg:" default.txt |awk '{ print $2 }'`
+              echo "default avg latency: ${DEFAULT_LATENCY} ms"
+              meta set default_avg_latency_ms ${DEFAULT_LATENCY}
+            #   sleep 300
+db_param_inference:
+    requires: [app_perf_test]
+    steps:
+        - run_inference: |
+              mkdir $SD_ARTIFACTS_DIR/inference/
+              git clone -b https://github.com/Tatzhiro/AutoDB.git
+              mv ${SD_ARTIFACTS_DIR}/train/train.csv AutoDB/sd_samples_yj/ml4db/dataset
+              mv ${SD_ARTIFACTS_DIR}/test/test.csv AutoDB/sd_samples_yj/ml4db/dataset
+              cd AutoDB/sd_samples_yj/ml4db/src
+              yum install -y yj-python38 yj-pip-config
+              export PATH=/opt/yj/python38/bin:$PATH
+              python3 -m pip install --upgrade pip
+              pip3 install -r ../requirements.txt
+              pip3 install pytorch_metric_learning
+              python3 --version
+              python3 tune_knobs.py model_name=tps_2 tps_estimator=tps_estimator_2
+              cp -r ../output/* $SD_ARTIFACTS_DIR/inference/
+              AUTO_INNODB_BUFFER_POOL_SIZE=`tail -n +2 ../output/tps_2/tuned_knob.csv| awk -F "," '{ printf("%d", $1 + 0.5) }'`
+              AUTO_INNODB_IO_CAPACITY=`tail -n +2 ../output/tps_2/tuned_knob.csv| awk -F "," '{ printf ("%d", $2 + 0.5) }'`
+              meta set auto_innodb_buffer_pool_size ${AUTO_INNODB_BUFFER_POOL_SIZE}
+              meta set auto_innodb_io_capacity ${AUTO_INNODB_IO_CAPACITY}
+risk_assessment:
+    requires: [db_param_inference]
+    steps:
+        - run_assessment: |
+              AUTO_INNODB_BUFFER_POOL_SIZE=`meta get auto_innodb_buffer_pool_size`
+              AUTO_INNODB_IO_CAPACITY=`meta get auto_innodb_io_capacity`
+              sudo yum install --enablerepo='epel' -y sysbench
+              sysbench --help
+              sudo yum install -y mysql-community-client 
+              mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${AUTO_INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${AUTO_INNODB_IO_CAPACITY}"
+              mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
+              sleep 60
+              ${TEST_API_001_HIGH} | tee auto.txt
+              cat auto.txt
+              grep -i "avg:" auto.txt | awk '{ print $2 }'
+              AUTO_LATENCY=`grep -i "avg:" auto.txt |awk '{ print $2 }'`
+              echo "auto avg latency: ${AUTO_LATENCY} ms"
+              meta set auto_avg_latency_ms ${AUTO_LATENCY}
+              DEFAULT_LATENCY=`meta get default_avg_latency_ms`
+              echo "default avg latency: ${DEFAULT_LATENCY} ms"
+              if [ `echo "${DEFAULT_LATENCY} < ${AUTO_LATENCY}" | bc` -eq 1 ]; then
+                  echo "*** RISK WARNING: THIS INFERENCE RESULT MIGHT CAUSE A POSSIBLE PERFORMANCE DEGRADATION ***"
+              else
+                  echo "*** GOOD TO DEPLOY: THIS INFERENCE RESULT IMPROVES THE DATABASE PERFORMANCE ***"
+              fi
