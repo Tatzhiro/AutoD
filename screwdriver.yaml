@@ -39,25 +39,25 @@ jobs:
                   wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
                   apt-get install -y sysbench
                   apt-get install -y default-mysql-client
-            - sysbench-verify: sysbench --help
-            - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';"
-            - db-param-set: |
-                  mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
-                  mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
-            - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
-            - data-load: |
-                  sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${THREAD_NUM} oltp_common prepare
-                #   sleep 80
-            - mkdir-for-train-and-test: |
-                  mkdir ${SD_ARTIFACTS_DIR}/train
-                  mkdir ${SD_ARTIFACTS_DIR}/test
-            - test: |
-                  python3 make_csv.py -s 0 -t 1 -p ${SD_ARTIFACTS_DIR}
-            - make-csv: |
-                  TRAIN_DIR=${SD_ARTIFACTS_DIR}/train
-                  TEST_DIR=${SD_ARTIFACTS_DIR}/test
-                  python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
-                  python3 concat_csv.py -f test.csv -p ${TEST_DIR}
+            # - sysbench-verify: sysbench --help
+            # - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';"
+            # - db-param-set: |
+            #       mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
+            #       mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
+            # - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
+            # - data-load: |
+            #       sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${THREAD_NUM} oltp_common prepare
+            #     #   sleep 80
+            # - mkdir-for-train-and-test: |
+            #       mkdir ${SD_ARTIFACTS_DIR}/train
+            #       mkdir ${SD_ARTIFACTS_DIR}/test
+            # - test: |
+            #       python3 make_csv.py -s 0 -t 1 -p ${SD_ARTIFACTS_DIR}
+            # - make-csv: |
+            #       TRAIN_DIR=${SD_ARTIFACTS_DIR}/train
+            #       TEST_DIR=${SD_ARTIFACTS_DIR}/test
+            #       python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
+            #       python3 concat_csv.py -f test.csv -p ${TEST_DIR}
 
             - run_prep: |
                 # wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash

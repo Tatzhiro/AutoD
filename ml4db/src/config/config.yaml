@@ -18,9 +18,9 @@ dataset_dir: "../dataset/"
 output_dir: "../output/"
 
 model_name: ???
-n_metrics: 10
+n_metrics: 9
 n_knobs: 2
-workload_dim: 11
+workload_dim: 10
 
 module_names:
     - "workload_embedder"
