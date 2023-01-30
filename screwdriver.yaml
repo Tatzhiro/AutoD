@@ -68,7 +68,7 @@ jobs:
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB}; show databases"
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
                 ${PREP_API}
-                #   sleep 60
+            #   sleep 60
                 #   ${PREP_API}
                 #   sleep 300
             - run_test: |
