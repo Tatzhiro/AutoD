@@ -40,11 +40,8 @@ def main(config: DictConfig):
     labels_encoded = df["label"]
     df.drop(["label", config.target_name], axis=1, inplace=True)
 
-    # convert disk_used_gb-used to data_disk_used_gb
-    df["disk_used_gb-used"] -= config.system_disk_used
-    df.rename(columns={"disk_used_gb-used": "data_disk_used_gb"}, inplace=True)
-
     # load metrics which will have been dropped
+    drop_metric_names = get_drop_metric_names(df.drop(config.knob_names, axis=1))
     drop_metric_names_path = config.output_dir / "drop_metric_names.txt"
     with open(drop_metric_names_path, "r") as f:
         drop_metric_names = [line.rstrip() for line in f.readlines()]
