@@ -1,6 +1,7 @@
 shared:
     annotations:
         screwdriver.cd/timeout: 2880
+        screwdriver.cd/cpu: HIGH
     requires: [~commit, ~pr]
     image: centos7-build-base:latest
     environment:
@@ -55,70 +56,70 @@ jobs:
                   python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
                   python3 concat_csv.py -f test.csv -p ${TEST_DIR}
 
-app_perf_test:
-    requires: [collect_data]
-    steps:
-        - run_prep: |
-              sudo yum install --enablerepo='epel' -y sysbench 
-              sudo yum install -y mysql-community-client 
-              mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'hostname'"
-              mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB}; show databases"
-              mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
-              ${PREP_API}
-            #   sleep 60
-            #   ${PREP_API}
-            #   sleep 300
-        - run_test: |
-              ${TEST_API_001_HIGH} | tee default.txt
-              cat default.txt
-              grep -i "avg:" default.txt | awk '{ print $2 }'
-              DEFAULT_LATENCY=`grep -i "avg:" default.txt |awk '{ print $2 }'`
-              echo "default avg latency: ${DEFAULT_LATENCY} ms"
-              meta set default_avg_latency_ms ${DEFAULT_LATENCY}
-            #   sleep 300
-db_param_inference:
-    requires: [app_perf_test]
-    steps:
-        - run_inference: |
-              mkdir $SD_ARTIFACTS_DIR/inference/
-              git clone -b https://github.com/Tatzhiro/AutoDB.git
-              mv ${SD_ARTIFACTS_DIR}/train/train.csv AutoDB/sd_samples_yj/ml4db/dataset
-              mv ${SD_ARTIFACTS_DIR}/test/test.csv AutoDB/sd_samples_yj/ml4db/dataset
-              cd AutoDB/sd_samples_yj/ml4db/src
-              yum install -y yj-python38 yj-pip-config
-              export PATH=/opt/yj/python38/bin:$PATH
-              python3 -m pip install --upgrade pip
-              pip3 install -r ../requirements.txt
-              pip3 install pytorch_metric_learning
-              python3 --version
-              python3 tune_knobs.py model_name=tps_2 tps_estimator=tps_estimator_2
-              cp -r ../output/* $SD_ARTIFACTS_DIR/inference/
-              AUTO_INNODB_BUFFER_POOL_SIZE=`tail -n +2 ../output/tps_2/tuned_knob.csv| awk -F "," '{ printf("%d", $1 + 0.5) }'`
-              AUTO_INNODB_IO_CAPACITY=`tail -n +2 ../output/tps_2/tuned_knob.csv| awk -F "," '{ printf ("%d", $2 + 0.5) }'`
-              meta set auto_innodb_buffer_pool_size ${AUTO_INNODB_BUFFER_POOL_SIZE}
-              meta set auto_innodb_io_capacity ${AUTO_INNODB_IO_CAPACITY}
-risk_assessment:
-    requires: [db_param_inference]
-    steps:
-        - run_assessment: |
-              AUTO_INNODB_BUFFER_POOL_SIZE=`meta get auto_innodb_buffer_pool_size`
-              AUTO_INNODB_IO_CAPACITY=`meta get auto_innodb_io_capacity`
-              sudo yum install --enablerepo='epel' -y sysbench
-              sysbench --help
-              sudo yum install -y mysql-community-client 
-              mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${AUTO_INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${AUTO_INNODB_IO_CAPACITY}"
-              mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
-              sleep 60
-              ${TEST_API_001_HIGH} | tee auto.txt
-              cat auto.txt
-              grep -i "avg:" auto.txt | awk '{ print $2 }'
-              AUTO_LATENCY=`grep -i "avg:" auto.txt |awk '{ print $2 }'`
-              echo "auto avg latency: ${AUTO_LATENCY} ms"
-              meta set auto_avg_latency_ms ${AUTO_LATENCY}
-              DEFAULT_LATENCY=`meta get default_avg_latency_ms`
-              echo "default avg latency: ${DEFAULT_LATENCY} ms"
-              if [ `echo "${DEFAULT_LATENCY} < ${AUTO_LATENCY}" | bc` -eq 1 ]; then
-                  echo "*** RISK WARNING: THIS INFERENCE RESULT MIGHT CAUSE A POSSIBLE PERFORMANCE DEGRADATION ***"
-              else
-                  echo "*** GOOD TO DEPLOY: THIS INFERENCE RESULT IMPROVES THE DATABASE PERFORMANCE ***"
-              fi
+    app_perf_test:
+        requires: [collect_data]
+        steps:
+            - run_prep: |
+                sudo yum install --enablerepo='epel' -y sysbench 
+                sudo yum install -y mysql-community-client 
+                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'hostname'"
+                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB}; show databases"
+                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
+                ${PREP_API}
+                #   sleep 60
+                #   ${PREP_API}
+                #   sleep 300
+            - run_test: |
+                ${TEST_API_001_HIGH} | tee default.txt
+                cat default.txt
+                grep -i "avg:" default.txt | awk '{ print $2 }'
+                DEFAULT_LATENCY=`grep -i "avg:" default.txt |awk '{ print $2 }'`
+                echo "default avg latency: ${DEFAULT_LATENCY} ms"
+                meta set default_avg_latency_ms ${DEFAULT_LATENCY}
+                #   sleep 300
+    db_param_inference:
+        requires: [app_perf_test]
+        steps:
+            - run_inference: |
+                mkdir $SD_ARTIFACTS_DIR/inference/
+                git clone -b https://github.com/Tatzhiro/AutoDB.git
+                mv ${SD_ARTIFACTS_DIR}/train/train.csv AutoDB/sd_samples_yj/ml4db/dataset
+                mv ${SD_ARTIFACTS_DIR}/test/test.csv AutoDB/sd_samples_yj/ml4db/dataset
+                cd AutoDB/sd_samples_yj/ml4db/src
+                yum install -y yj-python38 yj-pip-config
+                export PATH=/opt/yj/python38/bin:$PATH
+                python3 -m pip install --upgrade pip
+                pip3 install -r ../requirements.txt
+                pip3 install pytorch_metric_learning
+                python3 --version
+                python3 tune_knobs.py model_name=tps_2 tps_estimator=tps_estimator_2
+                cp -r ../output/* $SD_ARTIFACTS_DIR/inference/
+                AUTO_INNODB_BUFFER_POOL_SIZE=`tail -n +2 ../output/tps_2/tuned_knob.csv| awk -F "," '{ printf("%d", $1 + 0.5) }'`
+                AUTO_INNODB_IO_CAPACITY=`tail -n +2 ../output/tps_2/tuned_knob.csv| awk -F "," '{ printf ("%d", $2 + 0.5) }'`
+                meta set auto_innodb_buffer_pool_size ${AUTO_INNODB_BUFFER_POOL_SIZE}
+                meta set auto_innodb_io_capacity ${AUTO_INNODB_IO_CAPACITY}
+    risk_assessment:
+        requires: [db_param_inference]
+        steps:
+            - run_assessment: |
+                AUTO_INNODB_BUFFER_POOL_SIZE=`meta get auto_innodb_buffer_pool_size`
+                AUTO_INNODB_IO_CAPACITY=`meta get auto_innodb_io_capacity`
+                sudo yum install --enablerepo='epel' -y sysbench
+                sysbench --help
+                sudo yum install -y mysql-community-client 
+                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${AUTO_INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${AUTO_INNODB_IO_CAPACITY}"
+                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
+                sleep 60
+                ${TEST_API_001_HIGH} | tee auto.txt
+                cat auto.txt
+                grep -i "avg:" auto.txt | awk '{ print $2 }'
+                AUTO_LATENCY=`grep -i "avg:" auto.txt |awk '{ print $2 }'`
+                echo "auto avg latency: ${AUTO_LATENCY} ms"
+                meta set auto_avg_latency_ms ${AUTO_LATENCY}
+                DEFAULT_LATENCY=`meta get default_avg_latency_ms`
+                echo "default avg latency: ${DEFAULT_LATENCY} ms"
+                if [ `echo "${DEFAULT_LATENCY} < ${AUTO_LATENCY}" | bc` -eq 1 ]; then
+                    echo "*** RISK WARNING: THIS INFERENCE RESULT MIGHT CAUSE A POSSIBLE PERFORMANCE DEGRADATION ***"
+                else
+                    echo "*** GOOD TO DEPLOY: THIS INFERENCE RESULT IMPROVES THE DATABASE PERFORMANCE ***"
+                fi
