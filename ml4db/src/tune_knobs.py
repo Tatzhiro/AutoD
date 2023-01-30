@@ -16,6 +16,7 @@ from tqdm import tqdm
 from model import TPSEstimator, WorkloadEmbedder
 from utils.dataset import TPSEstimatorDataset
 from utils.general import camel_to_snake, convert_config_str_to_path, fix_seed, inverse_normalize, load_best_module
+from utils.dataset import TPSEstimatorDataset, get_drop_metric_names
 from utils.visualization import plot_3d
 
 
@@ -41,6 +42,7 @@ def main(config: DictConfig):
     df.drop(["label", config.target_name], axis=1, inplace=True)
 
     # load metrics which will have been dropped
+    drop_metric_names = get_drop_metric_names(df.drop(config.knob_names, axis=1))
     drop_metric_names_path = config.output_dir / "drop_metric_names.txt"
     with open(drop_metric_names_path, "r") as f:
         drop_metric_names = [line.rstrip() for line in f.readlines()]
