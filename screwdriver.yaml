@@ -30,10 +30,10 @@ jobs:
     collect_data:
         steps:
             - install-dependencies: |
-                  apt-get install -y yj-python38 yj-pip-config
-                  export PATH=/opt/yj/python38/bin:$PATH
-                  python3 -m pip install --upgrade pip
-                  pip3 install -r ../requirements.txt
+                  apt-get -y update
+                  apt-get install -y python3-pip
+                  pip install --upgrade pip
+                  pip install -r ../requirements.txt
                   wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
                   apt-get install -y sysbench
                   apt-get install -y default-mysql-client
@@ -88,9 +88,10 @@ jobs:
                 mv ${SD_ARTIFACTS_DIR}/train/train.csv AutoDB/sd_samples_yj/ml4db/dataset
                 mv ${SD_ARTIFACTS_DIR}/test/test.csv AutoDB/sd_samples_yj/ml4db/dataset
                 cd AutoDB/sd_samples_yj/ml4db/src
-                apt-get install -y yj-python38 yj-pip-config
-                export PATH=/opt/yj/python38/bin:$PATH
-                python3 -m pip install --upgrade pip
+                apt-get -y update
+                apt-get install -y python3-pip
+                pip install --upgrade pip
+                pip install -r ../requirements.txt
                 pip3 install -r ../requirements.txt
                 pip3 install pytorch_metric_learning
                 python3 --version
