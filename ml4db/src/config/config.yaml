@@ -1,0 +1,35 @@
+defaults:
+    - _self_
+    - workload_embedder: workload_embedder_scaled
+    - tps_estimator: tps_estimator
+    - tune_knobs: tune_knobs
+    - override hydra/hydra_logging: disabled
+    - override hydra/job_logging: disabled
+
+hydra:
+    output_subdir: null
+    run:
+        dir: .
+
+seed: 3407
+
+system_disk_used: 6.8
+dataset_dir: "../dataset/"
+output_dir: "../output/"
+
+model_name: ???
+n_metrics: 10
+n_knobs: 2
+workload_dim: 11
+
+module_names:
+    - "workload_embedder"
+    - "tps_estimator"
+    - "tune_knobs"
+knob_names:
+    - "innodb_buffer_pool"
+    - "innodb_io_capacity"
+target_name: "tps"
+
+# training option
+load_trained_workload_embedder: False

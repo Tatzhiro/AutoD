@@ -1,0 +1,30 @@
+acc_metric_name: "mean_average_precision_at_r"
+
+# architecture
+hidden_units:
+    - 40
+    - 50
+    - 50
+
+# dataloader options
+batch_size: 128
+num_workers: 8
+valid_split: 0.1
+
+# trainer options
+epochs: 100
+
+# optimizer
+lr: 0.002
+betas:
+    - 0.9
+    - 0.999
+final_lr: 0.003
+gamma: 3e-6
+eps: 1e-8
+weight_decay: 1e-8
+
+# schedular
+scheduler_step_size: 30
+schedular_gamma: 0.3
+# Trial 25 finished with value: 0.9951765447091767 and parameters: {'num_encoder_layer': 3, 'encoder_0': 56, 'encoder_1': 44, 'encoder_2': 50, 'workload_dim': 46, 'lr': 0.0019198505581276952, 'final_lr': 0.00036139101392496895, 'gamma': 2.909948571493187e-06, 'weight_decay': 8.185212415932025e-09, 'step_size': 30, 'scheduler_gamma': 0.3629889691560364, 'batch_size': 232}. Best is trial 25 with value: 0.9951765447091767.

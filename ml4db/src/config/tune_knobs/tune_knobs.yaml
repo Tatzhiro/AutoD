@@ -1,0 +1,18 @@
+# trainer options
+epochs: 100
+
+# optimizer
+lr: 0.01
+betas:
+    - 0.9
+    - 0.999
+final_lr: 0.1
+gamma: 0.0001
+eps: 0.00000001
+weight_decay: 0.0001
+
+# schedular
+scheduler_step_size: 30
+schedular_gamma: 0.5
+
+make_graph: True

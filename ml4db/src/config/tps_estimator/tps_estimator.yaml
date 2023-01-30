@@ -1,0 +1,30 @@
+# 層数が少ないのなら，learning_rateは結構小さくしておいて，final_lrはそこそこ大きくする．層数が多いのならlearning_rateはそこまで小さくせずにfinal_lrは同じくらいの値にしておく．それ以外はそこまで関係ない．
+# architecture
+hidden_units:
+    - 128
+    - 128
+    - 64
+    - 64
+    - 32
+
+# dataloader options
+batch_size: 128
+num_workers: 8
+valid_split: 0.1
+
+# trainer options
+epochs: 100
+
+# optimizer
+lr: 0.003
+betas:
+    - 0.9
+    - 0.999
+final_lr: 0.01
+gamma: 1e-5
+eps: 0.00000001
+weight_decay: 1e-10
+
+# schedular
+scheduler_step_size: 24
+schedular_gamma: 0.4

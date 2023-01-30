@@ -1,0 +1,30 @@
+acc_metric_name: "mean_average_precision_at_r"
+
+# architecture
+hidden_units:
+    - 30
+    - 50
+    - 50
+
+# dataloader options
+batch_size: 256
+num_workers: 8
+valid_split: 0.1
+
+# trainer options
+epochs: 100
+
+# optimizer
+lr: 0.002
+betas:
+    - 0.9
+    - 0.999
+final_lr: 0.001
+gamma: 0.01
+eps: 1e-8
+weight_decay: 1e-9
+
+# schedular
+scheduler_step_size: 16
+schedular_gamma: 0.3
+# value=0.9908506127451974 {'num_encoder_layer': 3, 'encoder_0': 34, 'encoder_1': 55, 'encoder_2': 53, 'workload_dim': 32, 'lr': 0.0024482475334130067, 'final_lr': 0.0012840944294722568, 'gamma': 0.009628729340194443, 'weight_decay': 4.401178610412783e-09, 'step_size': 16, 'scheduler_gamma': 0.2362684210741029, 'batch_size': 212}

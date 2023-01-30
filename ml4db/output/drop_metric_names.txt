@@ -1,0 +1,12 @@
+swap/s
+num slow queries
+sort merge/s
+avg lock time/s
+tablesize
+timestamp
+disk IOPS
+network IOPS
+disk busy %
+handler call/s
+created tmp tables/s
+CPU Usage %
