@@ -31,6 +31,7 @@ jobs:
     collect_data:
         steps:
             - install-dependencies: |
+                  git clone https://github.com/Tatzhiro/AutoDB.git
                   nproc
                   apt-get -y update
                   apt-get install -y python3-pip
@@ -81,7 +82,7 @@ jobs:
 
             - run_inference: |
                 mkdir $SD_ARTIFACTS_DIR/inference/
-                git clone https://github.com/Tatzhiro/AutoDB.git
+                # git clone https://github.com/Tatzhiro/AutoDB.git
                 mv ${SD_ARTIFACTS_DIR}/train/train.csv AutoDB/sd_samples_yj/ml4db/dataset
                 mv ${SD_ARTIFACTS_DIR}/test/test.csv AutoDB/sd_samples_yj/ml4db/dataset
                 cd AutoDB/sd_samples_yj/ml4db/src
