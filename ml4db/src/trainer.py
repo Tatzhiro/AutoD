@@ -124,6 +124,7 @@ class WorkloadEmbedderTrainer(BaseTrainer):
         total_loss = 0.0
 
         with tqdm(self.train_dataloader, unit="batch") as pbar:
+            print(f"[Epoch {epoch}/{self.module_config.epochs}]")
             pbar.set_description(f"[Epoch {epoch}/{self.module_config.epochs}]")
             for features, labels in pbar:
                 features, labels = features.to(self.device), labels.to(self.device)
@@ -270,6 +271,7 @@ class TPSEstimatorTrainer(BaseTrainer):
         total_l1_loss = 0.0
 
         with tqdm(self.train_dataloader, unit="batch") as pbar:
+            print(f"[Epoch {epoch}/{self.module_config.epochs}]")
             pbar.set_description(f"[Epoch {epoch}/{self.module_config.epochs}]")
             for metrics, knobs, targets in pbar:
                 metrics, knobs, targets = metrics.to(self.device), knobs.to(self.device), targets.to(self.device)
