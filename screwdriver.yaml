@@ -3,14 +3,14 @@ shared:
         screwdriver.cd/timeout: 2880
         screwdriver.cd/cpu: HIGH
     requires: [~commit, ~pr]
-    image: centos7-build-base:latest
+    image: buildpack-deps
     environment:
         MYSQL_HOST: 20.222.144.239
         MYSQL_USER: test
         MYSQL_PASSWD: test
         MYSQL_DB: test
         TABLE_NUM: 4
-        TABLE_SIZE: 1
+        TABLE_SIZE: 1000000
         INNODB_BUFFER_POOL_SIZE: 134217728
         INNODB_IO_CAPACITY: 200
         THREAD_NUM: 60
@@ -75,9 +75,9 @@ jobs:
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'hostname'"
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB}; show databases"
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
-                # sleep 60
+                sleep 60
                 ${PREP_API}
-                # sleep 300
+                sleep 300
             - run_test: |
                 ${TEST_API_001_HIGH} | tee default.txt
                 cat default.txt
@@ -85,7 +85,7 @@ jobs:
                 DEFAULT_LATENCY=`grep -i "avg:" default.txt |awk '{ print $2 }'`
                 echo "default avg latency: ${DEFAULT_LATENCY} ms"
                 meta set default_avg_latency_ms ${DEFAULT_LATENCY}
-                # sleep 300
+                sleep 300
 
     db_param_inference:
         requires: [ app_perf_test ]
@@ -129,7 +129,7 @@ jobs:
                 AUTO_INNODB_IO_CAPACITY=`meta get auto_innodb_io_capacity`
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${AUTO_INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${AUTO_INNODB_IO_CAPACITY}"
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
-                # sleep 60
+                sleep 60
                 ${TEST_API_001_HIGH} | tee auto.txt
                 cat auto.txt
                 grep -i "avg:" auto.txt | awk '{ print $2 }'
