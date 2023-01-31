@@ -38,7 +38,6 @@ jobs:
                   pip install -r requirements.txt
                   pip install -r ml4db/requirements.txt
                   pip install pytorch_metric_learning==1.6.3
-                  pip show pytorch_metric_learning
                   wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
                   apt-get install -y sysbench
                   apt-get install -y default-mysql-client
@@ -61,11 +60,11 @@ jobs:
             #       TEST_DIR=${SD_ARTIFACTS_DIR}/test
             #       python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
             #       python3 concat_csv.py -f test.csv -p ${TEST_DIR}
-            - train_py: |
-                cd ml4db/src
-                python3 train.py model_name=tps_2 tps_estimator=tps_estimator_2
-                cat ../output/drop_metric_names.txt
-                sed -i '/timestamp/d' ../output/drop_metric_names.txt
+            # - train_py: |
+            #     cd ml4db/src
+            #     python3 train.py model_name=tps_2 tps_estimator=tps_estimator_2
+            #     cat ../output/drop_metric_names.txt
+            #     sed -i '/timestamp/d' ../output/drop_metric_names.txt
             - run_prep: |
                 # wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
                 # apt-get install -y sysbench
@@ -98,15 +97,12 @@ jobs:
                 python3 tune_knobs.py model_name=tps_2 tps_estimator=tps_estimator_2
             - inference2: |
                 cp -r ../output/* $SD_ARTIFACTS_DIR/inference/
-                echo Good
-                AUTO_INNODB_BUFFER_POOL_SIZE=`tail -n +2 ../output/tps_2/tuned_knob.csv| awk -F "," '{ printf("%d", $1 + 0.5) }'`
-                echo AUTO_INNODB_BUFFER_POOL_SIZE=${AUTO_INNODB_BUFFER_POOL_SIZE}
-                AUTO_INNODB_IO_CAPACITY=`tail -n +2 ../output/tps_2/tuned_knob.csv| awk -F "," '{ printf ("%d", $2 + 0.5) }'`
-                echo AUTO_INNODB_IO_CAPACITY=${AUTO_INNODB_IO_CAPACITY}
-                meta set auto_innodb_buffer_pool_size ${AUTO_INNODB_BUFFER_POOL_SIZE}
-                echo Good set
+                cat ../output/tps_2/tuned_knob.csv
+                AUTO_INNODB_BUFFER_POOL_SIZE=`tail -n +2 ../output/tps_2/tuned_knob.csv | awk -F "," '{ printf("%d", $1 + 0.5) }'`
+                AUTO_INNODB_IO_CAPACITY=`tail -n +2 ../output/tps_2/tuned_knob.csv | awk -F "," '{ printf ("%d", $2 + 0.5) }'`
+                # meta set auto_innodb_buffer_pool_size ${AUTO_INNODB_BUFFER_POOL_SIZE}
+                meta set auto_innodb_buffer_pool_size 89681869
                 meta set auto_innodb_io_capacity ${AUTO_INNODB_IO_CAPACITY}
-                echo Good set
 
             - run_assessment: |
                 AUTO_INNODB_BUFFER_POOL_SIZE=`meta get auto_innodb_buffer_pool_size`
