@@ -37,7 +37,7 @@ jobs:
                   pip install --upgrade pip
                   pip install -r requirements.txt
                   pip install -r ml4db/requirements.txt
-                  pip install pytorch_metric_learning
+                  pip install pytorch_metric_learning==1.6.3
                   pip show pytorch_metric_learning
                   wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
                   apt-get install -y sysbench
