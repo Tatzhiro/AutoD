@@ -111,7 +111,7 @@ jobs:
                 elif [ ${AUTO_INNODB_BUFFER_POOL_SIZE} -ge ${SYS_MEM} ]; then
                     AUTO_INNODB_BUFFER_POOL_SIZE=$((${SYS_MEM}*0.7))
                 fi
-                if [ ${AUTO_INNODB_IO_CAPACITY} -lt 0 ]; then
+                if [ ${AUTO_INNODB_IO_CAPACITY} -lt 100 ]; then
                     AUTO_INNODB_IO_CAPACITY=${INNODB_IO_CAPACITY}
                 fi
                 meta set auto_innodb_buffer_pool_size ${AUTO_INNODB_BUFFER_POOL_SIZE}
