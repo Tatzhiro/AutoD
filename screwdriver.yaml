@@ -98,10 +98,15 @@ jobs:
                 python3 tune_knobs.py model_name=tps_2 tps_estimator=tps_estimator_2
             - inference2: |
                 cp -r ../output/* $SD_ARTIFACTS_DIR/inference/
+                echo Good
                 AUTO_INNODB_BUFFER_POOL_SIZE=`tail -n +2 ../output/tps_2/tuned_knob.csv| awk -F "," '{ printf("%d", $1 + 0.5) }'`
+                echo AUTO_INNODB_BUFFER_POOL_SIZE=${AUTO_INNODB_BUFFER_POOL_SIZE}
                 AUTO_INNODB_IO_CAPACITY=`tail -n +2 ../output/tps_2/tuned_knob.csv| awk -F "," '{ printf ("%d", $2 + 0.5) }'`
+                echo AUTO_INNODB_IO_CAPACITY=${AUTO_INNODB_IO_CAPACITY}
                 meta set auto_innodb_buffer_pool_size ${AUTO_INNODB_BUFFER_POOL_SIZE}
+                echo Good set
                 meta set auto_innodb_io_capacity ${AUTO_INNODB_IO_CAPACITY}
+                echo Good set
 
             - run_assessment: |
                 AUTO_INNODB_BUFFER_POOL_SIZE=`meta get auto_innodb_buffer_pool_size`
