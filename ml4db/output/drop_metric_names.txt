@@ -3,9 +3,10 @@ num slow queries
 sort merge/s
 avg lock time/s
 tablesize
-disk IOPS
 network IOPS
-disk busy %
-handler call/s
-created tmp tables/s
 CPU Usage %
+handler call/s
+disk IOPS
+created tmp tables/s
+disk busy %
+query rate

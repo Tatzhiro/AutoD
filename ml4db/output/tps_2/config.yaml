@@ -1,0 +1,70 @@
+seed: 3407
+system_disk_used: 6.8
+dataset_dir: ../dataset
+output_dir: ../output
+model_name: tps_2
+n_metrics: 9
+n_knobs: 2
+workload_dim: 10
+module_names:
+- workload_embedder
+- tps_estimator
+- tune_knobs
+knob_names:
+- innodb_buffer_pool
+- innodb_io_capacity
+target_name: tps
+load_trained_workload_embedder: false
+workload_embedder:
+  acc_metric_name: mean_average_precision_at_r
+  hidden_units:
+  - 40
+  - 50
+  - 50
+  batch_size: 128
+  num_workers: 8
+  valid_split: 0.1
+  epochs: 100
+  lr: 0.002
+  betas:
+  - 0.9
+  - 0.999
+  final_lr: 0.003
+  gamma: 3.0e-06
+  eps: 1.0e-08
+  weight_decay: 1.0e-08
+  scheduler_step_size: 30
+  schedular_gamma: 0.3
+tps_estimator:
+  hidden_units:
+  - 80
+  - 60
+  - 60
+  - 30
+  batch_size: 128
+  num_workers: 8
+  valid_split: 0.1
+  epochs: 100
+  lr: 0.003
+  betas:
+  - 0.9
+  - 0.999
+  final_lr: 0.01
+  gamma: 1.0e-06
+  eps: 1.0e-08
+  weight_decay: 1.0e-05
+  scheduler_step_size: 24
+  schedular_gamma: 0.3
+tune_knobs:
+  epochs: 100
+  lr: 0.01
+  betas:
+  - 0.9
+  - 0.999
+  final_lr: 0.1
+  gamma: 0.0001
+  eps: 1.0e-08
+  weight_decay: 0.0001
+  scheduler_step_size: 30
+  schedular_gamma: 0.5
+  make_graph: true
