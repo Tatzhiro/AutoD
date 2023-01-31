@@ -90,7 +90,6 @@ jobs:
                 mkdir $SD_ARTIFACTS_DIR/inference/
                 # mv ${SD_ARTIFACTS_DIR}/train/train.csv ml4db/dataset
                 # mv ${SD_ARTIFACTS_DIR}/test/test.csv ml4db/dataset
-                cd ml4db/src
                 # apt-get -y update
                 # apt-get install -y python3-pip
                 # pip install --upgrade pip
