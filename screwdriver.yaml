@@ -38,6 +38,7 @@ jobs:
                   pip install -r requirements.txt
                   pip install -r ml4db/requirements.txt
                   pip install pytorch_metric_learning
+                  pip show pytorch_metric_learning
                   wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
                   apt-get install -y sysbench
                   apt-get install -y default-mysql-client
