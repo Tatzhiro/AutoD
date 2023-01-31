@@ -31,16 +31,6 @@ jobs:
     collect_data:
         steps:
             - install-dependencies: |
-                  AUTO_INNODB_BUFFER_POOL_SIZE=-1
-                  AUTO_INNODB_IO_CAPACITY=-1
-                  if [ ${AUTO_INNODB_BUFFER_POOL_SIZE} -lt 0 ]; then
-                    AUTO_INNODB_BUFFER_POOL_SIZE=${INNODB_BUFFER_POOL_SIZE}
-                  fi
-                  if [ ${AUTO_INNODB_IO_CAPACITY} -lt 0 ]; then
-                    AUTO_INNODB_IO_CAPACITY=${INNODB_IO_CAPACITY}
-                  fi
-                  echo AUTO_INNODB_BUFFER_POOL_SIZE=${AUTO_INNODB_BUFFER_POOL_SIZE}
-                  echo AUTO_INNODB_IO_CAPACITY=${AUTO_INNODB_IO_CAPACITY}
                   nproc
                   apt-get -y update
                   apt-get install -y python3-pip
@@ -104,6 +94,7 @@ jobs:
                 # apt-get -y update
                 # apt-get install -y python3-pip
                 # pip install --upgrade pip
+                cd ml4db/src
                 python3 tune_knobs.py model_name=tps_2 tps_estimator=tps_estimator_2
             - inference2: |
                 cp -r ../output/* $SD_ARTIFACTS_DIR/inference/
@@ -111,8 +102,11 @@ jobs:
                 AUTO_INNODB_BUFFER_POOL_SIZE=`tail -n +2 ../output/tps_2/tuned_knob.csv | awk -F "," '{ printf("%d", $1 + 0.5) }'`
                 AUTO_INNODB_IO_CAPACITY=`tail -n +2 ../output/tps_2/tuned_knob.csv | awk -F "," '{ printf ("%d", $2 + 0.5) }'`
                 # meta set auto_innodb_buffer_pool_size ${AUTO_INNODB_BUFFER_POOL_SIZE}
+                SYS_MEM=`free -b | grep Mem: | awk '{ print $2 }'`
                 if [ ${AUTO_INNODB_BUFFER_POOL_SIZE} -lt 0 ]; then
                     AUTO_INNODB_BUFFER_POOL_SIZE=${INNODB_BUFFER_POOL_SIZE}
+                elif [ ${AUTO_INNODB_BUFFER_POOL_SIZE} -ge ${SYS_MEM} ]; then
+                    AUTO_INNODB_BUFFER_POOL_SIZE=$((${SYS_MEM}*0.7))
                 fi
                 if [ ${AUTO_INNODB_IO_CAPACITY} -lt 0 ]; then
                     AUTO_INNODB_IO_CAPACITY=${INNODB_IO_CAPACITY}
