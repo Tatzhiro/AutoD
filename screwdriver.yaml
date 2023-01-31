@@ -3,7 +3,7 @@ shared:
         screwdriver.cd/timeout: 2880
         screwdriver.cd/cpu: HIGH
     requires: [~commit, ~pr]
-    image: buildpack-deps
+    image: centos7-build-base:latest
     environment:
         MYSQL_HOST: 20.222.144.239
         MYSQL_USER: test
