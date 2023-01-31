@@ -65,7 +65,7 @@ jobs:
                 cd ml4db/src
                 python3 train.py model_name=tps_2 tps_estimator=tps_estimator_2
                 cat ../output/drop_metric_names.txt
-                sed '/timestamp/d' ../output/drop_metric_names.txt
+                sed -i '/timestamp/d' ../output/drop_metric_names.txt
             - run_prep: |
                 # wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
                 # apt-get install -y sysbench
