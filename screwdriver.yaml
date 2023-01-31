@@ -80,6 +80,8 @@ jobs:
             - run_test: |
                 ${TEST_API_001_HIGH} | tee default.txt
                 cat default.txt
+                pwd
+                ls
                 grep -i "avg:" default.txt | awk '{ print $2 }'
                 DEFAULT_LATENCY=`grep -i "avg:" default.txt |awk '{ print $2 }'`
                 echo "default avg latency: ${DEFAULT_LATENCY} ms"
@@ -94,6 +96,7 @@ jobs:
                 # apt-get install -y python3-pip
                 # pip install --upgrade pip
                 python3 tune_knobs.py model_name=tps_2 tps_estimator=tps_estimator_2
+            - inference2: |
                 cp -r ../output/* $SD_ARTIFACTS_DIR/inference/
                 AUTO_INNODB_BUFFER_POOL_SIZE=`tail -n +2 ../output/tps_2/tuned_knob.csv| awk -F "," '{ printf("%d", $1 + 0.5) }'`
                 AUTO_INNODB_IO_CAPACITY=`tail -n +2 ../output/tps_2/tuned_knob.csv| awk -F "," '{ printf ("%d", $2 + 0.5) }'`
