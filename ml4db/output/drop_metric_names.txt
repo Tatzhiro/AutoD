@@ -3,7 +3,6 @@ num slow queries
 sort merge/s
 avg lock time/s
 tablesize
-timestamp
 disk IOPS
 network IOPS
 disk busy %

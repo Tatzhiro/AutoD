@@ -36,6 +36,8 @@ jobs:
                   apt-get install -y python3-pip
                   pip install --upgrade pip
                   pip install -r requirements.txt
+                  pip install -r ml4db/requirements.txt
+                  pip install pytorch_metric_learning
                   wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
                   apt-get install -y sysbench
                   apt-get install -y default-mysql-client
@@ -58,7 +60,11 @@ jobs:
             #       TEST_DIR=${SD_ARTIFACTS_DIR}/test
             #       python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
             #       python3 concat_csv.py -f test.csv -p ${TEST_DIR}
-
+            - train_py: |
+                cd ml4db/src
+                python3 tune_knobs.py model_name=tps_2 tps_estimator=tps_estimator_2
+                cat ../output/drop_metric_name.txt
+                sed '/timestamp/d' ../output/drop_metric_name.txt
             - run_prep: |
                 # wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
                 # apt-get install -y sysbench
@@ -87,9 +93,6 @@ jobs:
                 # apt-get -y update
                 # apt-get install -y python3-pip
                 # pip install --upgrade pip
-                pip install -r ../requirements.txt
-                pip install pytorch_metric_learning
-                python3 --version
                 python3 tune_knobs.py model_name=tps_2 tps_estimator=tps_estimator_2
                 cp -r ../output/* $SD_ARTIFACTS_DIR/inference/
                 AUTO_INNODB_BUFFER_POOL_SIZE=`tail -n +2 ../output/tps_2/tuned_knob.csv| awk -F "," '{ printf("%d", $1 + 0.5) }'`
