@@ -142,4 +142,8 @@ jobs:
                     echo "*** RISK WARNING: THIS INFERENCE RESULT MIGHT CAUSE A POSSIBLE PERFORMANCE DEGRADATION ***"
                 else
                     echo "*** GOOD TO DEPLOY: THIS INFERENCE RESULT IMPROVES THE DATABASE PERFORMANCE ***"
+                    mkdir -p auto_tuned_results
+                    cd auto_tuned_results
+                    echo "${HIGH},${AUTO_INNODB_BUFFER_POOL_SIZE},${AUTO_INNODB_IO_CAPACITY}" > auto_tuned_results.csv
+                    git add .; git commit -m "publish auto tuned results"; git push origin main
                 fi
