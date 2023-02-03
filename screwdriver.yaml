@@ -31,8 +31,8 @@ jobs:
     git_test:
         steps:
             - push: |
-                git config --local user.email "t19601tn@sfc.keio.ac.jp" --verbose
-                git config --local user.name "Tatzmori" --verbose
+                # git config --local user.email "t19601tn@sfc.keio.ac.jp" --verbose
+                # git config --local user.name "Tatzmori" --verbose
                 mkdir -p auto_tuned_results
                 touch auto_tuned_results/auto_tuned_results.csv
                 git add . --verbose; git commit -m "publish auto tuned results" --verbose
