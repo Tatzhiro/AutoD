@@ -31,11 +31,11 @@ jobs:
     git_test:
         steps:
             - push: |
-                git config --local user.email "t19601tn@sfc.keio.ac.jp"
-                git config --local user.name "Tatzmori"
+                git config --local user.email "t19601tn@sfc.keio.ac.jp" --verbose
+                git config --local user.name "Tatzmori" --verbose
                 mkdir -p auto_tuned_results
                 touch auto_tuned_results/auto_tuned_results.csv
-                git add .; git commit -m "publish auto tuned results"; git push origin main
+                git add . --verbose; git commit -m "publish auto tuned results" --verbose; git push origin main --verbose
     # collect_data:
     #     steps:
     #         - check-core-num: nproc
@@ -74,6 +74,7 @@ jobs:
     #             sed -i '/timestamp/d' ../output/drop_metric_names.txt
                 
     app_perf_test:
+        requires: [ git_test ]
         steps:
             - install_dependencies: |
                 wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
