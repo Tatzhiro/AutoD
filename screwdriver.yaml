@@ -28,6 +28,14 @@ shared:
         AUTO_INNODB_BUFFER_POOL_SIZE: 0
         AUTO_INNODB_IO_CAPACITY: 0
 jobs:
+    git_test:
+        steps:
+            - push: |
+                git config --local user.email "t19601tn@sfc.keio.ac.jp"
+                git config --local user.name "Tatzmori"
+                mkdir -p auto_tuned_results
+                touch auto_tuned_results/auto_tuned_results.csv
+                git add .; git commit -m "publish auto tuned results"; git push origin main
     # collect_data:
     #     steps:
     #         - check-core-num: nproc
