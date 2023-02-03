@@ -34,6 +34,7 @@ jobs:
                 git config --global user.email "t19601tn@sfc.keio.ac.jp" --verbose
                 git config --global user.name "Tatzmori" --verbose
                 git clone https://github.com/Tatzhiro/config-repo.git
+                cd config-repo
                 # git remote set-url origin https://${ACCESS_TOKEN}@github.com/Tatzmori/AutoD.git
                 mkdir -p auto_tuned_results
                 touch auto_tuned_results/auto_tuned_results.csv
