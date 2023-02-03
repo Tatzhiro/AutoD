@@ -35,7 +35,8 @@ jobs:
                 git config --local user.name "Tatzmori" --verbose
                 mkdir -p auto_tuned_results
                 touch auto_tuned_results/auto_tuned_results.csv
-                git add . --verbose; git commit -m "publish auto tuned results" --verbose; git push origin main --verbose
+                git add . --verbose; git commit -m "publish auto tuned results" --verbose
+                git push https://${ACCESS_TOKEN}@github.com/Tatzmori/AutoD.git --verbose
     # collect_data:
     #     steps:
     #         - check-core-num: nproc
