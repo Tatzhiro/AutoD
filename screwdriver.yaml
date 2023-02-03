@@ -31,9 +31,9 @@ jobs:
     git_test:
         steps:
             - push: |
-                git remote set-url origin https://${ACCESS_TOKEN}@github.com/Tatzmori/AutoD.git
-                git config --global user.email "t19601tn@sfc.keio.ac.jp" --verbose
-                git config --global user.name "Tatzmori" --verbose
+                # git remote set-url origin https://${ACCESS_TOKEN}@github.com/Tatzmori/AutoD.git
+                # git config --global user.email "t19601tn@sfc.keio.ac.jp" --verbose
+                # git config --global user.name "Tatzmori" --verbose
                 mkdir -p auto_tuned_results
                 touch auto_tuned_results/auto_tuned_results.csv
                 echo Hey > auto_tuned_results/auto_tuned_results.csv
