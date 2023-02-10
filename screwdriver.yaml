@@ -69,6 +69,7 @@ jobs:
     config_repo_test:
         steps:
             - makedb: |
+                wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
                 apt-get install -y default-mysql-client
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "CREATE DATABASE IF NOT EXISTS config_repo;"
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "CREATE TABLE IF NOT EXISTS config_repo.param_set (CPU_usage_percent INT NOT NULL, IOPS INT NOT NULL, Connections INT NOT NULL, innodb_buffer_pool_size INT NOT NULL, innodb_io_capacity INT NOT NULL);"
