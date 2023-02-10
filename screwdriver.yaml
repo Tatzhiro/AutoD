@@ -27,20 +27,9 @@ shared:
         AUTO_LATENCY: 0
         AUTO_INNODB_BUFFER_POOL_SIZE: 0
         AUTO_INNODB_IO_CAPACITY: 0
+        RESULT_CPU_USAGE: 0
+        RESULT_DISK_IOPS: 0
 jobs:
-    git_test:
-        steps:
-            - push: |
-                git config --global user.email "t19601tn@sfc.keio.ac.jp" --verbose
-                git config --global user.name "Tatzmori" --verbose
-                git clone https://${ACCESS_TOKEN}@github.com/Tatzhiro/config-repo.git
-                cd config-repo
-                # git remote set-url origin https://${ACCESS_TOKEN}@github.com/Tatzmori/AutoD.git
-                mkdir -p auto_tuned_results
-                touch auto_tuned_results/auto_tuned_results.csv
-                echo Hey > auto_tuned_results/auto_tuned_results.csv
-                git add . --verbose; git commit -m "publish auto tuned results" --verbose
-                git push origin main --verbose --progress
     # collect_data:
     #     steps:
     #         - check-core-num: nproc
@@ -77,9 +66,14 @@ jobs:
     #             python3 train.py model_name=tps_2 tps_estimator=tps_estimator_2
     #             cat ../output/drop_metric_names.txt
     #             sed -i '/timestamp/d' ../output/drop_metric_names.txt
-                
+    config_repo_test:
+        steps:
+            - makedb: |
+                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "CREATE DATABASE IF NOT EXISTS config_repo;"
+                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "CREATE TABLE IF NOT EXISTS config_repo.param_set (CPU_usage_percent INT NOT NULL, IOPS INT NOT NULL, Connections INT NOT NULL, innodb_buffer_pool_size INT NOT NULL, innodb_io_capacity INT NOT NULL);"
+                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "INSERT INTO config_repo.param_set (CPU_usage_percent, IOPS, Connections, innodb_buffer_pool_size, innodb_io_capacity) VALUES (${RESULT_CPU_USAGE}, ${RESULT_DISK_IOPS}, ${HIGH}, ${AUTO_INNODB_BUFFER_POOL_SIZE}, ${AUTO_INNODB_IO_CAPACITY})"
+                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "DROP DATABASE config_repo;"
     app_perf_test:
-        requires: [ git_test ]
         steps:
             - install_dependencies: |
                 wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
@@ -94,11 +88,16 @@ jobs:
                 sleep 300
             - run_test: |
                 ${TEST_API_001_HIGH} | tee default.txt
+                python3 exporter.py
+                RESULT_CPU_USAGE=`python3 avg_metric.py -c "CPU Usage %"`
+                RESULT_DISK_IOPS=`python3 avg_metric.py -c "disk IOPS"`
                 cat default.txt
                 grep -i "avg:" default.txt | awk '{ print $2 }'
                 DEFAULT_LATENCY=`grep -i "avg:" default.txt |awk '{ print $2 }'`
                 echo "default avg latency: ${DEFAULT_LATENCY} ms"
                 meta set default_avg_latency_ms ${DEFAULT_LATENCY}
+                meta set result_cpu_usage ${RESULT_CPU_USAGE}
+                meta set result_disk_iops ${RESULT_DISK_IOPS}
                 sleep 300
 
     db_param_inference:
@@ -139,6 +138,8 @@ jobs:
                 apt-get install -y sysbench
                 apt-get install -y default-mysql-client
             - run_assessment: |
+                RESULT_CPU_USAGE=`meta get result_cpu_usage`
+                RESULT_DISK_IOPS=`meta get result_disk_iops`
                 AUTO_INNODB_BUFFER_POOL_SIZE=`meta get auto_innodb_buffer_pool_size`
                 AUTO_INNODB_IO_CAPACITY=`meta get auto_innodb_io_capacity`
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${AUTO_INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${AUTO_INNODB_IO_CAPACITY}"
@@ -156,8 +157,7 @@ jobs:
                     echo "*** RISK WARNING: THIS INFERENCE RESULT MIGHT CAUSE A POSSIBLE PERFORMANCE DEGRADATION ***"
                 else
                     echo "*** GOOD TO DEPLOY: THIS INFERENCE RESULT IMPROVES THE DATABASE PERFORMANCE ***"
-                    mkdir -p auto_tuned_results
-                    cd auto_tuned_results
-                    echo "${HIGH},${AUTO_INNODB_BUFFER_POOL_SIZE},${AUTO_INNODB_IO_CAPACITY}" > auto_tuned_results.csv
-                    git add .; git commit -m "publish auto tuned results"; git push origin main
+                    mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "CREATE DATABASE IF NOT EXISTS config_repo;"
+                    mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "CREATE TABLE IF NOT EXISTS config_repo.param_set (CPU_usage_percent INT NOT NULL, IOPS INT NOT NULL, Connections INT NOT NULL, innodb_buffer_pool_size INT NOT NULL, innodb_io_capacity INT NOT NULL);"
+                    mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "INSERT INTO config_repo.param_set (CPU_usage_percent, IOPS, Connections, innodb_buffer_pool_size, innodb_io_capacity) VALUES (${RESULT_CPU_USAGE}, ${RESULT_DISK_IOPS}, ${HIGH}, ${AUTO_INNODB_BUFFER_POOL_SIZE}, ${AUTO_INNODB_IO_CAPACITY})"
                 fi
