@@ -66,21 +66,16 @@ jobs:
     #             python3 train.py model_name=tps_2 tps_estimator=tps_estimator_2
     #             cat ../output/drop_metric_names.txt
     #             sed -i '/timestamp/d' ../output/drop_metric_names.txt
-    config_repo_test:
-        steps:
-            - makedb: |
-                wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
-                apt-get install -y default-mysql-client
-                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "CREATE DATABASE IF NOT EXISTS config_repo;"
-                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "CREATE TABLE IF NOT EXISTS config_repo.param_set (CPU_usage_percent INT NOT NULL, IOPS INT NOT NULL, Connections INT NOT NULL, innodb_buffer_pool_size INT NOT NULL, innodb_io_capacity INT NOT NULL);"
-                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "INSERT INTO config_repo.param_set (CPU_usage_percent, IOPS, Connections, innodb_buffer_pool_size, innodb_io_capacity) VALUES (${RESULT_CPU_USAGE}, ${RESULT_DISK_IOPS}, ${HIGH}, ${AUTO_INNODB_BUFFER_POOL_SIZE}, ${AUTO_INNODB_IO_CAPACITY})"
-                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "DROP DATABASE config_repo;"
     app_perf_test:
         steps:
             - install_dependencies: |
                 wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
                 apt-get install -y sysbench
                 apt-get install -y default-mysql-client
+                apt-get -y update
+                apt-get install -y python3-pip
+                pip install --upgrade pip
+                pip install -r requirements.txt
             - run_prep: |
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'hostname'"
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB}; show databases"
