@@ -69,13 +69,13 @@ jobs:
     app_perf_test:
         steps:
             - install_dependencies: |
-                wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
-                apt-get install -y sysbench
-                apt-get install -y default-mysql-client
                 apt-get -y update
                 apt-get install -y python3-pip
                 pip install --upgrade pip
                 pip install -r requirements.txt
+                wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
+                apt-get install -y sysbench
+                apt-get install -y default-mysql-client
             - run_prep: |
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'hostname'"
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB}; show databases"
