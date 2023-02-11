@@ -173,8 +173,9 @@ def main(args):
     url = 'http://20.222.144.239:9090/api/v1/query_range'
     results = send_requests(args, queries, url)
     output_csv(args.filename, results, queryName)
-    for key, value in args.configs.items():
-        add_column(args.filename, key, value)
+    if args.configs is not None:
+        for key, value in args.configs.items():
+            add_column(args.filename, key, value)
 
 
 if __name__ == "__main__":
