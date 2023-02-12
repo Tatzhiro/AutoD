@@ -15,7 +15,7 @@ shared:
         INNODB_IO_CAPACITY: 200
         THREAD_NUM: 60
 
-        TEST_DURATION: 1
+        TEST_DURATION: 300
         LOW: 1
         MEDIUM: 10
         HIGH: 60
@@ -85,9 +85,9 @@ jobs:
                 sleep 300
             - run_test: |
                 ${TEST_API_001_HIGH} | tee default.txt
-                python3 exporter.py
-                RESULT_CPU_USAGE=`python3 avg_metric.py -c "CPU Usage %"`
-                RESULT_DISK_IOPS=`python3 avg_metric.py -c "disk IOPS"`
+                python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics.csv
+                RESULT_CPU_USAGE=`python3 avg_metric.py -f ${SD_ARTIFACTS_DIR}/metrics.csv -c "CPU Usage %"`
+                RESULT_DISK_IOPS=`python3 avg_metric.py -f ${SD_ARTIFACTS_DIR}/metrics.csv -c "disk IOPS"`
                 cat default.txt
                 grep -i "avg:" default.txt | awk '{ print $2 }'
                 DEFAULT_LATENCY=`grep -i "avg:" default.txt |awk '{ print $2 }'`
