@@ -10,7 +10,6 @@ def main(param_names):
     print(f"cpu usage: {cpu_usage}, iops: {disk_iops}")
     
     cpu_threshold, iops_threshold = read_threshold_from_repo()
-    iops_threshold = 30
     if cpu_usage > cpu_threshold and disk_iops > iops_threshold:
         new_param_values = read_parameters_from_repo(param_names)
         update_myqsql_parameters(param_names, new_param_values)
@@ -19,27 +18,16 @@ def main(param_names):
 def get_cpu_usage(): return psutil.cpu_percent()
 
 def get_disk_iops():
-    disk_io_counters = psutil.disk_io_counters()
-    read_ps = disk_io_counters.read_count / disk_io_counters.read_time
-    write_ps = disk_io_counters.write_count / disk_io_counters.write_time
-
     starttime = time.time()
     io_counters_start = psutil.disk_io_counters()
 
-    # Get the initial disk I/O counters for the entire system
-    io_counters_start = psutil.disk_io_counters()
-
-
-    # Wait for a short time
     time.sleep(1)
+
     endtime = time.time()
-    # Get the updated disk I/O counters for the entire system
     io_counters_end = psutil.disk_io_counters()
 
-    # Calculate the elapsed time between the two measurements
     elapsed_time = endtime - starttime
 
-    # Calculate the input and output operation counts per second
     read_count_ps = (io_counters_end.read_count - io_counters_start.read_count) / elapsed_time
     write_count_ps = (io_counters_end.write_count - io_counters_start.write_count) / elapsed_time
     return read_count_ps + write_count_ps
@@ -99,6 +87,7 @@ if __name__ == '__main__':
                         default="")
     args = parser.parse_args()
     parameters = ["innodb_buffer_pool_size", "innodb_io_capacity"]
+    sleeptime = 1
     while True:
         main(parameters)
-        time.sleep(1)
+        time.sleep(sleeptime)
