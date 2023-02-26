@@ -2,9 +2,30 @@
 import psutil
 import time
 import mysql.connector
-import argparse
+import os
 
-def main(param_names):
+def main():
+    print("Agent Started")
+    login_info = {"user": "root", "password": "root_passwd"}
+    parameters = ["innodb_buffer_pool_size", "innodb_io_capacity"]
+    sleeptime = 1
+
+    start = time.time()
+    while True:
+        done_tuned = autotune(login_info, parameters)
+        if done_tuned:
+            end = time.time()
+            tune_time = end - start
+            output_result(tune_time)
+            exit()
+        time.sleep(sleeptime)
+
+def output_result(tune_time):
+    print(f"agent tuned mysql in {tune_time} seconds")
+    os.system("mkdir -p /home/azureuser/AutoD/result")
+    os.system(f"echo agent tuned mysql in {tune_time} seconds > /home/azureuser/AutoD/result/agent.log")
+
+def autotune(login_info, param_names):
     cpu_usage = get_cpu_usage()
     disk_iops = get_disk_iops()
     print(f"cpu usage: {cpu_usage}, iops: {disk_iops}")
@@ -12,7 +33,9 @@ def main(param_names):
     cpu_threshold, iops_threshold = read_threshold_from_repo()
     if cpu_usage > cpu_threshold and disk_iops > iops_threshold:
         new_param_values = read_parameters_from_repo(param_names)
-        update_myqsql_parameters(param_names, new_param_values)
+        update_myqsql_parameters(login_info, param_names, new_param_values)
+        return True
+    return False
 
 
 def get_cpu_usage(): return psutil.cpu_percent()
@@ -45,22 +68,26 @@ def read_parameters_from_repo(columns):
     return values
 
 
-def update_myqsql_parameters(param_names, param_values):
-    for name, value in param_names, param_values:
-        print(f"{name}: {value}")
-    return
-    db=mysql.connector.connect(host="localhost", user=args.user, password=args.password)
+def update_myqsql_parameters(login_info, param_names, param_values):
+    # for name, value in zip(param_names, param_values):
+    #     print(f"{name}: {value}")
+
+    db=mysql.connector.connect(host="localhost", user=login_info["user"], password=login_info["password"])
     cursor=db.cursor()
 
-    for name, value in param_names, param_values:
-        set_param_query = f"SET GLOBAL {name} = {value}"
+    for name, value in zip(param_names, param_values):
+        set_param_query = f"SET GLOBAL {name}={value}"
+        show_param_query = f"SHOW GLOBAL VARIABLES LIKE \"{name}\""
+        print(set_param_query)
         cursor.execute(set_param_query)
+        cursor.execute(show_param_query)
+        print(cursor.fetchone())
+        
 
     db.commit()
 
     cursor.close()
     db.close
-    return
 
 
 def fetch_column_from_config_repo(column, host="20.222.144.239", user="test", password="test", database="config_repo"):
@@ -78,16 +105,4 @@ def fetch_column_from_config_repo(column, host="20.222.144.239", user="test", pa
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Connect to MySQL')
-    parser.add_argument('--user', metavar='user', type=str,
-                        help='name of user',
-                        default="root")
-    parser.add_argument('--password', metavar='pw', type=str,
-                        help='password for the user',
-                        default="")
-    args = parser.parse_args()
-    parameters = ["innodb_buffer_pool_size", "innodb_io_capacity"]
-    sleeptime = 1
-    while True:
-        main(parameters)
-        time.sleep(sleeptime)
+    main()

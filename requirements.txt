@@ -2,3 +2,4 @@ IPython
 requests
 pandas
 mysql-connector-python
+psutil
