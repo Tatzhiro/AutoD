@@ -4,26 +4,22 @@ import time
 import mysql.connector
 import os
 
+start = 0
+
 def main():
+    os.system("rm -f /home/azureuser/AutoD/result/agent.log")
+
     print("Agent Started")
     login_info = {"user": "root", "password": "root_passwd"}
     parameters = ["innodb_buffer_pool_size", "innodb_io_capacity"]
     sleeptime = 1
 
+    global start
     start = time.time()
     while True:
         done_tuned = autotune(login_info, parameters)
-        if done_tuned:
-            end = time.time()
-            tune_time = end - start
-            output_result(tune_time)
-            exit()
+        if done_tuned: exit()
         time.sleep(sleeptime)
-
-def output_result(tune_time):
-    print(f"agent tuned mysql in {tune_time} seconds")
-    os.system("mkdir -p /home/azureuser/AutoD/result")
-    os.system(f"echo agent tuned mysql in {tune_time} seconds > /home/azureuser/AutoD/result/agent.log")
 
 def autotune(login_info, param_names):
     cpu_usage = get_cpu_usage()
@@ -32,11 +28,22 @@ def autotune(login_info, param_names):
     
     cpu_threshold, iops_threshold = read_threshold_from_repo()
     if cpu_usage > cpu_threshold and disk_iops > iops_threshold:
+        output_elapsed_time("Workload detection")
         new_param_values = read_parameters_from_repo(param_names)
+        output_elapsed_time("Config-repo access")
         update_myqsql_parameters(login_info, param_names, new_param_values)
+        output_elapsed_time("MySQL parameter update")
         return True
     return False
 
+def output_elapsed_time(agent_action):
+    global start
+    end = time.time()
+    elapsed_time = end - start
+    message = f"{agent_action} took {elapsed_time} seconds"
+    print(message)
+    os.system("mkdir -p /home/azureuser/AutoD/result")
+    os.system(f"echo {message} >> /home/azureuser/AutoD/result/agent.log")
 
 def get_cpu_usage(): return psutil.cpu_percent()
 

@@ -40,7 +40,8 @@ def main():
     benchmark()
   else : 
     if args.filename == "autotune":
-      agent.main()
+      # agent.main()
+      os.system("sudo service agent start")
 
 
 if __name__ == "__main__":
