@@ -101,7 +101,6 @@ jobs:
         # requires: [ app_perf_test ]
         steps:
             - install_dependencies: |
-                docker system prune -a --filter "until=24h"
                 echo ${TMPDIR}
                 df -h
                 mkdir $HOME/tmp
