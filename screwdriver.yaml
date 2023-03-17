@@ -107,7 +107,7 @@ jobs:
                 ls /tmp
                 echo ${TMPDIR}
                 df -h
-                df -h /
+                du -d1 -x / | sort -n -r
                 false
                 mkdir $HOME/tmp
                 export TMPDIR='$HOME/tmp'
