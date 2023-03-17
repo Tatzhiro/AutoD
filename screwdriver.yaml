@@ -101,6 +101,7 @@ jobs:
         # requires: [ app_perf_test ]
         steps:
             - install_dependencies: |
+                df -h
                 export TMPDIR='/var/tmp'
                 apt-get -y update
                 apt-get install -y python3-pip
