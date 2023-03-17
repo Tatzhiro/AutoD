@@ -108,6 +108,8 @@ jobs:
                 echo ${TMPDIR}
                 df -h
                 du -d1 -x -h / | sort -n -r
+                pwd
+                du -d1 -h | sort -n -r
                 false
                 mkdir $HOME/tmp
                 export TMPDIR='$HOME/tmp'
