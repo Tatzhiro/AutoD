@@ -98,7 +98,7 @@ jobs:
                 sleep 300
 
     db_param_inference:
-        requires: [ app_perf_test ]
+        # requires: [ app_perf_test ]
         steps:
             - install_dependencies: |
                 apt-get -y update
@@ -128,7 +128,7 @@ jobs:
                 meta set auto_innodb_io_capacity ${AUTO_INNODB_IO_CAPACITY}
 
     risk_assessment:
-        requires: [ db_param_inference ]
+        requires: [ db_param_inference, app_perf_test ]
         steps:
             - install_dependencies: |
                 wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
