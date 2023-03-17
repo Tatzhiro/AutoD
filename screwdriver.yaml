@@ -66,46 +66,49 @@ jobs:
     #             python3 train.py model_name=tps_2 tps_estimator=tps_estimator_2
     #             cat ../output/drop_metric_names.txt
     #             sed -i '/timestamp/d' ../output/drop_metric_names.txt
-    app_perf_test:
-        steps:
-            - install_dependencies: |
-                apt-get -y update
-                apt-get install -y python3-pip
-                pip install --upgrade pip
-                pip install -r requirements.txt
-                wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
-                apt-get install -y sysbench
-                apt-get install -y default-mysql-client
-            - run_prep: |
-                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'hostname'"
-                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB}; show databases"
-                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
-                sleep 60
-                ${PREP_API}
-                sleep 300
-            - run_test: |
-                ${TEST_API_001_HIGH} | tee default.txt
-                python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics.csv
-                # MOVE METRICS.CSV TO DATA DIRECTORY AND RENAME IT TO TEST.CSV 
-                RESULT_CPU_USAGE=`python3 avg_metric.py -f ${SD_ARTIFACTS_DIR}/metrics.csv -c "CPU Usage %"`
-                RESULT_DISK_IOPS=`python3 avg_metric.py -f ${SD_ARTIFACTS_DIR}/metrics.csv -c "disk IOPS"`
-                cat default.txt
-                grep -i "avg:" default.txt | awk '{ print $2 }'
-                DEFAULT_LATENCY=`grep -i "avg:" default.txt |awk '{ print $2 }'`
-                echo "default avg latency: ${DEFAULT_LATENCY} ms"
-                echo "result_cpu_usage: ${RESULT_CPU_USAGE}%" 
-                echo "result_disk_iops: ${RESULT_DISK_IOPS}" 
-                meta set default_avg_latency_ms ${DEFAULT_LATENCY}
-                meta set result_cpu_usage ${RESULT_CPU_USAGE}
-                meta set result_disk_iops ${RESULT_DISK_IOPS}
-                sleep 300
+    # app_perf_test:
+    #     steps:
+    #         - install_dependencies: |
+    #             apt-get -y update
+    #             apt-get install -y python3-pip
+    #             pip install --upgrade pip
+    #             pip install -r requirements.txt
+    #             wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
+    #             apt-get install -y sysbench
+    #             apt-get install -y default-mysql-client
+    #         - run_prep: |
+    #             mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'hostname'"
+    #             mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB}; show databases"
+    #             mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
+    #             sleep 60
+    #             ${PREP_API}
+    #             sleep 300
+    #         - run_test: |
+    #             ${TEST_API_001_HIGH} | tee default.txt
+    #             python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics.csv
+    #             # MOVE METRICS.CSV TO DATA DIRECTORY AND RENAME IT TO TEST.CSV 
+    #             RESULT_CPU_USAGE=`python3 avg_metric.py -f ${SD_ARTIFACTS_DIR}/metrics.csv -c "CPU Usage %"`
+    #             RESULT_DISK_IOPS=`python3 avg_metric.py -f ${SD_ARTIFACTS_DIR}/metrics.csv -c "disk IOPS"`
+    #             cat default.txt
+    #             grep -i "avg:" default.txt | awk '{ print $2 }'
+    #             DEFAULT_LATENCY=`grep -i "avg:" default.txt |awk '{ print $2 }'`
+    #             echo "default avg latency: ${DEFAULT_LATENCY} ms"
+    #             echo "result_cpu_usage: ${RESULT_CPU_USAGE}%" 
+    #             echo "result_disk_iops: ${RESULT_DISK_IOPS}" 
+    #             meta set default_avg_latency_ms ${DEFAULT_LATENCY}
+    #             meta set result_cpu_usage ${RESULT_CPU_USAGE}
+    #             meta set result_disk_iops ${RESULT_DISK_IOPS}
+    #             sleep 300
 
     db_param_inference:
-        requires: [ app_perf_test ]
+        # requires: [ app_perf_test ]
         steps:
             - install_dependencies: |
                 apt-get -y update
                 apt-get install -y python3-pip
+                mkdir ./tmp
+                export TMPDIR=./tmp
+                ls
                 pip install --upgrade pip
                 pip install -r ml4db/requirements.txt
                 pip install pytorch_metric_learning==1.6.3
