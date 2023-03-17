@@ -112,8 +112,8 @@ jobs:
                 du -d1 -h | sort -n -r
                 cd ml4db/src
                 apt-get update
-                apt-get install yum
-                yum install -y yj-python38 yj-pip-config
+                apt-get install dnf
+                dnf install -y yj-python38 yj-pip-config
                 export PATH=/opt/yj/python38/bin:$PATH
                 python3 -m pip install --upgrade pip
                 pip3 install -r ../requirements.txt
