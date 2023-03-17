@@ -111,8 +111,8 @@ jobs:
                 pwd
                 du -d1 -h | sort -n -r
                 cd ml4db/src
-                apt-get update
-                apt-get install dnf
+                apt-get update -y
+                apt-get install dnf -y
                 dnf install -y yj-python38 yj-pip-config
                 export PATH=/opt/yj/python38/bin:$PATH
                 python3 -m pip install --upgrade pip
