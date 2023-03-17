@@ -114,15 +114,15 @@ jobs:
                 apt-get install -y python3-pip
                 pip install --upgrade pip
                 # pip install -r ml4db/src/requirements.txt 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
-                pip install hydra-core
-                pip install joblib
-                pip install pandas
-                pip install torch
-                pip install adabound
-                pip install omegaconf
-                pip install scikit-learn
-                pip install tqdm
-                pip install numpy
+                pip install hydra-core 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
+                pip install joblib 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
+                pip install pandas 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
+                pip install torch 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
+                pip install adabound 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
+                pip install omegaconf 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
+                pip install scikit-learn 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
+                pip install tqdm 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
+                pip install numpy 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
                 pip install pytorch_metric_learning==1.6.3
                 pip list --format=columns --verbose
                 df -h
