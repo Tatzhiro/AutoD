@@ -107,6 +107,8 @@ jobs:
                 ls /tmp
                 echo ${TMPDIR}
                 df -h
+                df -h /
+                false
                 mkdir $HOME/tmp
                 export TMPDIR='$HOME/tmp'
                 apt-get -y update
@@ -116,6 +118,7 @@ jobs:
                 pip install pytorch_metric_learning==1.6.3
                 pip list --format=columns --verbose
                 df -h
+                df -h /
                 ls
                 ls /
                 ls /tmp
