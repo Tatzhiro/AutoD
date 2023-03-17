@@ -112,8 +112,10 @@ jobs:
                 du -d1 -h | sort -n -r
                 apt-get -y update
                 apt-get install -y python3-pip
+                echo pip install --upgrade pip
                 pip install --upgrade pip
                 # pip install -r ml4db/src/requirements.txt 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
+                echo pip install hydra-core
                 pip install hydra-core 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
                 pip install joblib 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
                 pip install pandas 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
