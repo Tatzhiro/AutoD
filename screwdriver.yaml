@@ -106,9 +106,6 @@ jobs:
             - install_dependencies: |
                 apt-get -y update
                 apt-get install -y python3-pip
-                mkdir ./tmp
-                export TMPDIR=./tmp
-                ls
                 pip install --upgrade pip
                 pip install -r ml4db/requirements.txt
                 pip install pytorch_metric_learning==1.6.3
