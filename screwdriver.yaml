@@ -101,11 +101,12 @@ jobs:
         # requires: [ app_perf_test ]
         steps:
             - install_dependencies: |
+                export TMPDIR='/var/tmp'
                 apt-get -y update
                 apt-get install -y python3-pip
                 pip install --upgrade pip
                 pip install -r ml4db/requirements.txt
-                # pip install pytorch_metric_learning==1.6.3
+                pip install pytorch_metric_learning==1.6.3
             - run_inference: |
                 mkdir $SD_ARTIFACTS_DIR/inference/
                 cd ml4db/src
