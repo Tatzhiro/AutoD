@@ -113,7 +113,8 @@ jobs:
                 apt-get install -y python3-pip
                 pip install --upgrade pip
                 pip install -r ml4db/requirements.txt 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
-                pip install pytorch_metric_learning==1.6.3 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
+                pip install pytorch_metric_learning==1.6.3
+                pip list --format=columns --verbose
                 df -h
                 ls
                 ls /
