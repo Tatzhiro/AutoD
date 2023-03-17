@@ -110,23 +110,12 @@ jobs:
                 du -d1 -x -h / | sort -n -r
                 pwd
                 du -d1 -h | sort -n -r
-                apt-get -y update
-                apt-get install -y python3-pip
-                echo pip install --upgrade pip
-                pip install --upgrade pip
-                # pip install -r ml4db/src/requirements.txt 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
-                echo pip install hydra-core
-                pip install hydra-core 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
-                pip install joblib 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
-                pip install pandas 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
-                pip install torch 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
-                pip install adabound 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
-                pip install omegaconf 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
-                pip install scikit-learn 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
-                pip install tqdm 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
-                pip install numpy 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
-                pip install pytorch_metric_learning==1.6.3
-                pip list --format=columns --verbose
+                cd ml4db/src
+                yum install -y yj-python38 yj-pip-config
+                export PATH=/opt/yj/python38/bin:$PATH
+                python3 -m pip install --upgrade pip
+                pip3 install -r ../requirements.txt
+                pip3 install pytorch_metric_learning
                 df -h
                 df -h /
                 ls
