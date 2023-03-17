@@ -111,6 +111,10 @@ jobs:
                 pip install -r ml4db/requirements.txt 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
                 pip install pytorch_metric_learning==1.6.3 2>&1 | tee ${SD_ARTIFACTS_DIR}/error.log
                 df -h
+                ls
+                ls ${TMPDIR}
+                ls /
+                ls /tmp
             - run_inference: |
                 mkdir $SD_ARTIFACTS_DIR/inference/
                 cd ml4db/src
