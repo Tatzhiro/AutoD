@@ -110,9 +110,6 @@ jobs:
                 du -d1 -x -h / | sort -n -r
                 pwd
                 du -d1 -h | sort -n -r
-                false
-                mkdir $HOME/tmp
-                export TMPDIR='$HOME/tmp'
                 apt-get -y update
                 apt-get install -y python3-pip
                 pip install --upgrade pip
