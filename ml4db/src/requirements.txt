@@ -1,0 +1,9 @@
+hydra-core
+joblib
+pandas
+torch
+adabound
+omegaconf
+scikit-learn
+tqdm
+numpy
