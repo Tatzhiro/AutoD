@@ -30,137 +30,137 @@ shared:
         RESULT_CPU_USAGE: 0
         RESULT_DISK_IOPS: 0
 jobs:
-    # collect_data:
-    #     steps:
-    #         - check-core-num: nproc
-    #         - install-dependencies: |
-    #               apt-get -y update
-    #               apt-get install -y python3-pip
-    #               pip install --upgrade pip
-    #               pip install -r requirements.txt
-    #               pip install pytorch_metric_learning==1.6.3
-    #               wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
-    #               apt-get install -y sysbench
-    #               apt-get install -y default-mysql-client
-    #         - sysbench-verify: sysbench --help
-    #         - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';"
-    #         - db-param-set: |
-    #             mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
-    #             mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
-    #         - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
-    #         - data-load: |
-    #             sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${THREAD_NUM} oltp_common prepare
-    #             sleep 80
-    #         - mkdir-for-train-and-test: |
-    #             mkdir ${SD_ARTIFACTS_DIR}/train
-    #             mkdir ${SD_ARTIFACTS_DIR}/test
-    #         - test: |
-    #             python3 make_csv.py -p ${SD_ARTIFACTS_DIR}
-    #         - make-csv: |
-    #             TRAIN_DIR=${SD_ARTIFACTS_DIR}/train
-    #             TEST_DIR=${SD_ARTIFACTS_DIR}/test
-    #             python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
-    #             python3 concat_csv.py -f test.csv -p ${TEST_DIR}
-    #         - train_py: |
-    #             cd ml4db/src
-    #             python3 train.py model_name=tps_2 tps_estimator=tps_estimator_2
-    #             cat ../output/drop_metric_names.txt
-    #             sed -i '/timestamp/d' ../output/drop_metric_names.txt
-    app_perf_test:
+    collect_data:
         steps:
-            - install_dependencies: |
-                apt-get -y update
-                apt-get install -y python3-pip
-                pip install --upgrade pip
-                pip install -r requirements.txt
-                wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
-                apt-get install -y sysbench
-                apt-get install -y default-mysql-client
-            - run_prep: |
-                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'hostname'"
-                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB}; show databases"
+            - check-core-num: nproc
+            - install-dependencies: |
+                  apt-get -y update
+                  apt-get install -y python3-pip
+                  pip install --upgrade pip
+                  pip install -r requirements.txt
+                  pip install pytorch_metric_learning==1.6.3
+                  wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
+                  apt-get install -y sysbench
+                  apt-get install -y default-mysql-client
+            - sysbench-verify: sysbench --help
+            - conn-test: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "show variables like 'hostname';"
+            - db-param-set: |
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
-                sleep 60
-                ${PREP_API}
-                sleep 300
-            - run_test: |
-                ${TEST_API_001_HIGH} | tee default.txt
-                python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics.csv
-                cp ${SD_ARTIFACTS_DIR}/metrics.csv ml4db/dataset/test.csv
-                cat ml4db/dataset/test.csv
-                RESULT_CPU_USAGE=`python3 avg_metric.py -f ${SD_ARTIFACTS_DIR}/metrics.csv -c "CPU Usage %"`
-                RESULT_DISK_IOPS=`python3 avg_metric.py -f ${SD_ARTIFACTS_DIR}/metrics.csv -c "disk IOPS"`
-                cat default.txt
-                grep -i "avg:" default.txt | awk '{ print $2 }'
-                DEFAULT_LATENCY=`grep -i "avg:" default.txt |awk '{ print $2 }'`
-                echo "default avg latency: ${DEFAULT_LATENCY} ms"
-                echo "result_cpu_usage: ${RESULT_CPU_USAGE}%" 
-                echo "result_disk_iops: ${RESULT_DISK_IOPS}" 
-                meta set default_avg_latency_ms ${DEFAULT_LATENCY}
-                meta set result_cpu_usage ${RESULT_CPU_USAGE}
-                meta set result_disk_iops ${RESULT_DISK_IOPS}
-                sleep 300
-
-    db_param_inference:
-        requires: [ app_perf_test ]
-        steps:
-            - install_dependencies: |
-                apt-get -y update
-                apt-get install -y python3-pip
-                pip install --upgrade pip
-                pip install -r ml4db/requirements.txt
-                pip install pytorch_metric_learning==1.6.3
-                pip install hydra-core==1.3.1
-                pip list --version
-            - run_inference: |
-                mkdir $SD_ARTIFACTS_DIR/inference/
-                cd ml4db/src
-                python3 tune_knobs.py model_name=tps_2 tps_estimator=tps_estimator_2
-                cp -r ../output/* $SD_ARTIFACTS_DIR/inference/
-                cat ../output/tps_2/tuned_knob.csv
-                AUTO_INNODB_BUFFER_POOL_SIZE=`tail -n +2 ../output/tps_2/tuned_knob.csv | awk -F "," '{ printf("%d", $1 + 0.5) }'`
-                AUTO_INNODB_IO_CAPACITY=`tail -n +2 ../output/tps_2/tuned_knob.csv | awk -F "," '{ printf ("%d", $2 + 0.5) }'`
-                SYS_MEM=`free -b | grep Mem: | awk '{ print $2 }'`
-
-                if [ ${AUTO_INNODB_BUFFER_POOL_SIZE} -lt 0 ]; then
-                    AUTO_INNODB_BUFFER_POOL_SIZE=${INNODB_BUFFER_POOL_SIZE}
-                elif [ ${AUTO_INNODB_BUFFER_POOL_SIZE} -ge ${SYS_MEM} ]; then
-                    AUTO_INNODB_BUFFER_POOL_SIZE=$((${SYS_MEM}*0.7))
-                fi
-                if [ ${AUTO_INNODB_IO_CAPACITY} -lt 100 ]; then
-                    AUTO_INNODB_IO_CAPACITY=${INNODB_IO_CAPACITY}
-                fi
-                meta set auto_innodb_buffer_pool_size ${AUTO_INNODB_BUFFER_POOL_SIZE}
-                meta set auto_innodb_io_capacity ${AUTO_INNODB_IO_CAPACITY}
-
-    risk_assessment:
-        requires: [ db_param_inference ]
-        steps:
-            - install_dependencies: |
-                wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
-                apt-get install -y sysbench
-                apt-get install -y default-mysql-client
-            - run_assessment: |
-                RESULT_CPU_USAGE=`meta get result_cpu_usage`
-                RESULT_DISK_IOPS=`meta get result_disk_iops`
-                AUTO_INNODB_BUFFER_POOL_SIZE=`meta get auto_innodb_buffer_pool_size`
-                AUTO_INNODB_IO_CAPACITY=`meta get auto_innodb_io_capacity`
-                mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${AUTO_INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${AUTO_INNODB_IO_CAPACITY}"
                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
-                sleep 60
-                ${TEST_API_001_HIGH} | tee auto.txt
-                cat auto.txt
-                grep -i "avg:" auto.txt | awk '{ print $2 }'
-                AUTO_LATENCY=`grep -i "avg:" auto.txt |awk '{ print $2 }'`
-                echo "auto avg latency: ${AUTO_LATENCY} ms"
-                meta set auto_avg_latency_ms ${AUTO_LATENCY}
-                DEFAULT_LATENCY=`meta get default_avg_latency_ms`
-                echo "default avg latency: ${DEFAULT_LATENCY} ms"
-                if [ `echo "${DEFAULT_LATENCY} < ${AUTO_LATENCY}" | bc` -eq 1 ]; then
-                    echo "*** RISK WARNING: THIS INFERENCE RESULT MIGHT CAUSE A POSSIBLE PERFORMANCE DEGRADATION ***"
-                else
-                    echo "*** GOOD TO DEPLOY: THIS INFERENCE RESULT IMPROVES THE DATABASE PERFORMANCE ***"
-                    mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "CREATE DATABASE IF NOT EXISTS config_repo;"
-                    mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "CREATE TABLE IF NOT EXISTS config_repo.param_set (CPU_usage_percent INT NOT NULL, IOPS INT NOT NULL, Connections INT NOT NULL, innodb_buffer_pool_size INT NOT NULL, innodb_io_capacity INT NOT NULL);"
-                    mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "INSERT INTO config_repo.param_set (CPU_usage_percent, IOPS, Connections, innodb_buffer_pool_size, innodb_io_capacity) VALUES (${RESULT_CPU_USAGE}, ${RESULT_DISK_IOPS}, ${HIGH}, ${AUTO_INNODB_BUFFER_POOL_SIZE}, ${AUTO_INNODB_IO_CAPACITY})"
-                fi
+            - db-create: mysql -u ${MYSQL_USER} -p${MYSQL_PASSWD} -h ${MYSQL_HOST} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB};"
+            - data-load: |
+                sysbench --db-driver=mysql --mysql-host=${MYSQL_HOST} --mysql-user=${MYSQL_USER} --mysql-password=${MYSQL_PASSWD} --mysql-db=${MYSQL_DB} --tables=${TABLE_NUM} --table_size=${TABLE_SIZE} --threads=${THREAD_NUM} oltp_common prepare
+                sleep 80
+            - mkdir-for-train-and-test: |
+                mkdir ${SD_ARTIFACTS_DIR}/train
+                mkdir ${SD_ARTIFACTS_DIR}/test
+            - test: |
+                python3 make_csv.py -p ${SD_ARTIFACTS_DIR}
+            - make-csv: |
+                TRAIN_DIR=${SD_ARTIFACTS_DIR}/train
+                TEST_DIR=${SD_ARTIFACTS_DIR}/test
+                python3 concat_csv.py -f train.csv -p ${TRAIN_DIR}
+                python3 concat_csv.py -f test.csv -p ${TEST_DIR}
+            # - train_py: |
+            #     cd ml4db/src
+            #     python3 train.py model_name=tps_2 tps_estimator=tps_estimator_2
+            #     cat ../output/drop_metric_names.txt
+            #     sed -i '/timestamp/d' ../output/drop_metric_names.txt
+    # app_perf_test:
+    #     steps:
+    #         - install_dependencies: |
+    #             apt-get -y update
+    #             apt-get install -y python3-pip
+    #             pip install --upgrade pip
+    #             pip install -r requirements.txt
+    #             wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
+    #             apt-get install -y sysbench
+    #             apt-get install -y default-mysql-client
+    #         - run_prep: |
+    #             mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'hostname'"
+    #             mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "drop database if exists ${MYSQL_DB}; create database ${MYSQL_DB}; show databases"
+    #             mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${INNODB_IO_CAPACITY}"
+    #             sleep 60
+    #             ${PREP_API}
+    #             sleep 300
+    #         - run_test: |
+    #             ${TEST_API_001_HIGH} | tee default.txt
+    #             python3 exporter.py -f ${SD_ARTIFACTS_DIR}/metrics.csv
+    #             cp ${SD_ARTIFACTS_DIR}/metrics.csv ml4db/dataset/test.csv
+    #             cat ml4db/dataset/test.csv
+    #             RESULT_CPU_USAGE=`python3 avg_metric.py -f ${SD_ARTIFACTS_DIR}/metrics.csv -c "CPU Usage %"`
+    #             RESULT_DISK_IOPS=`python3 avg_metric.py -f ${SD_ARTIFACTS_DIR}/metrics.csv -c "disk IOPS"`
+    #             cat default.txt
+    #             grep -i "avg:" default.txt | awk '{ print $2 }'
+    #             DEFAULT_LATENCY=`grep -i "avg:" default.txt |awk '{ print $2 }'`
+    #             echo "default avg latency: ${DEFAULT_LATENCY} ms"
+    #             echo "result_cpu_usage: ${RESULT_CPU_USAGE}%" 
+    #             echo "result_disk_iops: ${RESULT_DISK_IOPS}" 
+    #             meta set default_avg_latency_ms ${DEFAULT_LATENCY}
+    #             meta set result_cpu_usage ${RESULT_CPU_USAGE}
+    #             meta set result_disk_iops ${RESULT_DISK_IOPS}
+    #             sleep 300
+
+    # db_param_inference:
+    #     requires: [ app_perf_test ]
+    #     steps:
+    #         - install_dependencies: |
+    #             apt-get -y update
+    #             apt-get install -y python3-pip
+    #             pip install --upgrade pip
+    #             pip install -r ml4db/requirements.txt
+    #             pip install pytorch_metric_learning==1.6.3
+    #             pip install hydra-core==1.3.1
+    #             pip list --version
+    #         - run_inference: |
+    #             mkdir $SD_ARTIFACTS_DIR/inference/
+    #             cd ml4db/src
+    #             python3 tune_knobs.py model_name=tps_2 tps_estimator=tps_estimator_2
+    #             cp -r ../output/* $SD_ARTIFACTS_DIR/inference/
+    #             cat ../output/tps_2/tuned_knob.csv
+    #             AUTO_INNODB_BUFFER_POOL_SIZE=`tail -n +2 ../output/tps_2/tuned_knob.csv | awk -F "," '{ printf("%d", $1 + 0.5) }'`
+    #             AUTO_INNODB_IO_CAPACITY=`tail -n +2 ../output/tps_2/tuned_knob.csv | awk -F "," '{ printf ("%d", $2 + 0.5) }'`
+    #             SYS_MEM=`free -b | grep Mem: | awk '{ print $2 }'`
+
+    #             if [ ${AUTO_INNODB_BUFFER_POOL_SIZE} -lt 0 ]; then
+    #                 AUTO_INNODB_BUFFER_POOL_SIZE=${INNODB_BUFFER_POOL_SIZE}
+    #             elif [ ${AUTO_INNODB_BUFFER_POOL_SIZE} -ge ${SYS_MEM} ]; then
+    #                 AUTO_INNODB_BUFFER_POOL_SIZE=$((${SYS_MEM}*0.7))
+    #             fi
+    #             if [ ${AUTO_INNODB_IO_CAPACITY} -lt 100 ]; then
+    #                 AUTO_INNODB_IO_CAPACITY=${INNODB_IO_CAPACITY}
+    #             fi
+    #             meta set auto_innodb_buffer_pool_size ${AUTO_INNODB_BUFFER_POOL_SIZE}
+    #             meta set auto_innodb_io_capacity ${AUTO_INNODB_IO_CAPACITY}
+
+    # risk_assessment:
+    #     requires: [ db_param_inference ]
+    #     steps:
+    #         - install_dependencies: |
+    #             wget -qO - https://packagecloud.io/install/repositories/akopytov/sysbench/script.deb.sh | bash
+    #             apt-get install -y sysbench
+    #             apt-get install -y default-mysql-client
+    #         - run_assessment: |
+    #             RESULT_CPU_USAGE=`meta get result_cpu_usage`
+    #             RESULT_DISK_IOPS=`meta get result_disk_iops`
+    #             AUTO_INNODB_BUFFER_POOL_SIZE=`meta get auto_innodb_buffer_pool_size`
+    #             AUTO_INNODB_IO_CAPACITY=`meta get auto_innodb_io_capacity`
+    #             mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "set global innodb_buffer_pool_size=${AUTO_INNODB_BUFFER_POOL_SIZE}; set global innodb_io_capacity=${AUTO_INNODB_IO_CAPACITY}"
+    #             mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "show variables like 'innodb_buffer_pool_size'; show variables like 'innodb_io_capacity';"
+    #             sleep 60
+    #             ${TEST_API_001_HIGH} | tee auto.txt
+    #             cat auto.txt
+    #             grep -i "avg:" auto.txt | awk '{ print $2 }'
+    #             AUTO_LATENCY=`grep -i "avg:" auto.txt |awk '{ print $2 }'`
+    #             echo "auto avg latency: ${AUTO_LATENCY} ms"
+    #             meta set auto_avg_latency_ms ${AUTO_LATENCY}
+    #             DEFAULT_LATENCY=`meta get default_avg_latency_ms`
+    #             echo "default avg latency: ${DEFAULT_LATENCY} ms"
+    #             if [ `echo "${DEFAULT_LATENCY} < ${AUTO_LATENCY}" | bc` -eq 1 ]; then
+    #                 echo "*** RISK WARNING: THIS INFERENCE RESULT MIGHT CAUSE A POSSIBLE PERFORMANCE DEGRADATION ***"
+    #             else
+    #                 echo "*** GOOD TO DEPLOY: THIS INFERENCE RESULT IMPROVES THE DATABASE PERFORMANCE ***"
+    #                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "CREATE DATABASE IF NOT EXISTS config_repo;"
+    #                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "CREATE TABLE IF NOT EXISTS config_repo.param_set (CPU_usage_percent INT NOT NULL, IOPS INT NOT NULL, Connections INT NOT NULL, innodb_buffer_pool_size INT NOT NULL, innodb_io_capacity INT NOT NULL);"
+    #                 mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWD} -e "INSERT INTO config_repo.param_set (CPU_usage_percent, IOPS, Connections, innodb_buffer_pool_size, innodb_io_capacity) VALUES (${RESULT_CPU_USAGE}, ${RESULT_DISK_IOPS}, ${HIGH}, ${AUTO_INNODB_BUFFER_POOL_SIZE}, ${AUTO_INNODB_IO_CAPACITY})"
+    #             fi
