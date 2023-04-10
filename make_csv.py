@@ -17,7 +17,7 @@ def main():
           os.system(f"sysbench --db-driver=mysql --mysql-host={args.host} --mysql-user={args.user} --mysql-password={args.password} --mysql-db={args.db} --tables={args.tablenum} --table_size={args.tablesize} --threads={thread} --time={args.time} {workload} run")
           os.system(f"python3 exporter.py --configs label={workload} tablesize={args.tablesize} -f {path}/{count}.csv")
           os.system(f"mysql -h {args.host} -u {args.user} -p{args.password} -e \"PURGE BINARY LOGS BEFORE NOW();\"")
-          # count += 1
+          count += 1
           # if count > (len(workloads) * len(threads) * len(buf_sizes) * len(io_caps) * 0.7): path = args.path + "/test"
           sleep(args.sleep)
 
